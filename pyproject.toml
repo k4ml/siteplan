@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "siteplan"
+version = "0.1.0"
+description = "Quickly build django website"
+authors = ["Kamal Mustafa"]
+license = "MIT"
+readme = "README.md"
+include = [
+    "LICENSE.txt",
+]
+
+packages = [
+    { include = "siteplan", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Django = "^3.2.6"
+click = "^8.0.1"
+gunicorn = "^20.1.0"
+whitenoise = "^5.3.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+siteplan = "siteplan.cli:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
