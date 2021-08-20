@@ -3,6 +3,14 @@
 A new way to Django development. Start small, grow big.
 
 ## Quickstart
+Create the app directory:-
+
+```
+mkdir myapp && cd myapp
+python3 -mvenv venv
+venv/bin/pip install siteplan
+```
+
 Add the following code to `app.py`:-
 
 ```
@@ -28,5 +36,5 @@ if __name__ == "__main__":
 Then run it with `siteplan`:-
 
 ```
-siteplan --app app:app run -b 127.0.0.1:9001
+venv/bin/siteplan --app app:app run -b 127.0.0.1:9001
 ```
