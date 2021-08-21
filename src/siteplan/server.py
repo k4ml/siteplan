@@ -1,4 +1,5 @@
 
+import os
 
 def run(app, address="127.0.0.1:9000", serve_static=False, reload_=False):
     import multiprocessing
@@ -32,9 +33,14 @@ def run(app, address="127.0.0.1:9000", serve_static=False, reload_=False):
     }
 
     if serve_static:
-        static_dir = os.path.join(settings.BASE_DIR, "static")
-        application = WhiteNoise(application, root=static_dir)
-        application.add_files(static_dir, prefix="/static/")
+        # serve files from directory ./static/ but also
+        # serve files from other installed apps collected
+        # through `collectstatic` command into STATIC_ROOT dir
+        static_dir = os.path.join(os.getcwd(), "static")
+        app = WhiteNoise(app, root=static_dir)
+        app.add_files(static_dir, prefix="/static/")
+        static_root_dir = os.path.join(os.getcwd(), "public")
+        app.add_files(static_root_dir, prefix="/static/")
 
     ret = GunicornApplication(app, options).run()
     return ret

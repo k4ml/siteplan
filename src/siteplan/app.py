@@ -1,4 +1,5 @@
 
+import os
 
 from django.conf import settings
 from django.core.management import execute_from_command_line
@@ -32,6 +33,20 @@ class App(object):
             ],
             "DEBUG": True,
             "ROOT_URLCONF": "siteplan.urls",
+            "STATIC_ROOT": os.path.join(os.getcwd(), "public"),
+            "STATICFILES_DIRS": [
+                os.path.join(os.getcwd(), "static"),
+            ],
+            "STATIC_URL": "/static/",
+            "TEMPLATES": [
+                {
+                    "BACKEND": "django.template.backends.django.DjangoTemplates",
+                    "DIRS": [
+                        os.path.join(os.getcwd(), "templates"),
+                    ],
+                    "APP_DIRS": True,
+                }
+            ],
         }
 
         default_conf.update(conf)
