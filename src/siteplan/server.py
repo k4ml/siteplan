@@ -37,10 +37,10 @@ def run(app, address="127.0.0.1:9000", serve_static=False, reload_=False):
         # serve files from other installed apps collected
         # through `collectstatic` command into STATIC_ROOT dir
         static_dir = os.path.join(os.getcwd(), "static")
-        app = WhiteNoise(app, root=static_dir)
-        app.add_files(static_dir, prefix="/static/")
         static_root_dir = os.path.join(os.getcwd(), "public")
+        app = WhiteNoise(app, root=static_dir)
         app.add_files(static_root_dir, prefix="/static/")
+        app.add_files(static_dir, prefix="/static/")
 
     ret = GunicornApplication(app, options).run()
     return ret
