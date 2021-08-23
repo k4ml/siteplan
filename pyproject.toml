@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "siteplan"
-version = "0.1.0"
+version = "0.1.1adev1"
 description = "Quickly build django website"
 authors = ["Kamal Mustafa"]
 license = "MIT"
