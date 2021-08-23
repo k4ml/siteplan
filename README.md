@@ -8,7 +8,7 @@ Create the app directory:-
 ```
 mkdir myapp && cd myapp
 python3 -mvenv venv
-venv/bin/pip install siteplan
+venv/bin/pip install -U siteplan --pre
 ```
 
 Add the following code to `app.py`:-
