@@ -10,16 +10,18 @@ from .app import App
 @click.pass_context
 @click.option('--debug/--no-debug', default=False)
 @click.option('--app', default=None)
-def cli(ctx, debug=False, app=None):
+@click.option('--settings', default="siteplan.settings")
+def cli(ctx, debug=False, app=None, settings=None):
     sys.path.insert(0, os.getcwd())
     ctx.ensure_object(dict)
     if app is not None:
         app = gunicorn.util.import_app(app)
         print("Got custom app,", app)
     else:
-        app = App({})
+        app = App()
 
     ctx.obj["siteplan_app"] = app
+    ctx.obj["siteplan_settings"] = settings
     click.echo(debug)
 
 @cli.command(
@@ -38,6 +40,8 @@ def manage(ctx, manage_args):
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+
+    os.environ["DJANGO_SETTINGS_MODULE"] = ctx.obj["siteplan_settings"]
     execute_from_command_line(["manage"] + list(manage_args))
 
 
@@ -48,6 +52,7 @@ def manage(ctx, manage_args):
 @click.pass_context
 def run(ctx, address, serve_static=False, reload_=False):
     from .server import run as server_run
+    os.environ["DJANGO_SETTINGS_MODULE"] = ctx.obj["siteplan_settings"]
     return server_run(ctx.obj["siteplan_app"], address, serve_static, reload_)
 
 
