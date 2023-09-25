@@ -15,8 +15,8 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+SETTINGS_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(os.getcwd())
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'djangomix',
     'siteplan',
 
     'wagtail.contrib.forms',
@@ -141,6 +142,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'public')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+# DJANGOMIX
+PUBLIC_URL = LARAVELMIX_PUBLIC_URL = STATIC_URL + 'mix/build'
+MANIFEST_DIRECTORY = LARAVELMIX_MANIFEST_DIRECTORY = os.path.join(SETTINGS_DIR, "static/mix/build")
+print(BASE_DIR)
+# END DJANGOMIX
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
