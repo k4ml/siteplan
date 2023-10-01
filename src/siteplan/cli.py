@@ -42,7 +42,12 @@ def manage(ctx, manage_args):
         ) from exc
 
     os.environ["DJANGO_SETTINGS_MODULE"] = ctx.obj["siteplan_settings"]
-    execute_from_command_line(["manage"] + list(manage_args))
+    manage_args = list(manage_args)
+    execute_from_command_line(["manage"] + manage_args)
+    if len(manage_args) > 0 and manage_args[0] == "migrate":
+        from .app import setup
+        print("Running initial setup")
+        setup()
 
 
 @click.option("--address", "-b", default="127.0.0.1:9000")

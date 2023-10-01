@@ -31,3 +31,29 @@ class App(object):
 
 def run():
     execute_from_command_line()
+
+def setup():
+    from wagtail.models import Page
+    from wagtail.models import Site
+    from .models import HomePage
+
+    if HomePage.objects.count() > 0:
+        return
+
+    old_hp = Page.objects.all()[1]
+    old_hp.delete()
+    hp = HomePage(
+            title="Home",
+            body="hello world",
+            path="/",
+            depth=1
+        )
+    root = Page.get_first_root_node()
+    root.add_child(instance=hp)
+    site = Site(
+            hostname="localhost",
+            port=9000,
+            site_name="Siteplan"
+        )
+    site.root_page = hp
+    site.save()
