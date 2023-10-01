@@ -51,14 +51,14 @@ def manage(ctx, manage_args):
 
 
 @click.option("--address", "-b", default="127.0.0.1:9000")
-@click.option("--serve-static/--no-serve-static", default=False)
+@click.option("--no-serve-static", default=False)
 @click.option("--reload/--no-reload", "reload_", default=False)
 @cli.command()
 @click.pass_context
-def run(ctx, address, serve_static=False, reload_=False):
+def run(ctx, address, no_serve_static=False, reload_=False):
     from .server import run as server_run
     os.environ["DJANGO_SETTINGS_MODULE"] = ctx.obj["siteplan_settings"]
-    return server_run(ctx.obj["siteplan_app"], address, serve_static, reload_)
+    return server_run(ctx.obj["siteplan_app"], address, not no_serve_static, reload_)
 
 
 @cli.command()
