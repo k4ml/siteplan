@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 include = [
     "LICENSE.txt",
-    "src/siteplan/static/**"
+    "src/siteplan/static/**/*"
 ]
 
 packages = [
