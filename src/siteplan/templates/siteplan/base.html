@@ -7,8 +7,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Website</title>
+    {% block head_js %}{% endblock %}
     <!-- Include Tailwind CSS v3 -->
+    {% block head_css %}
     <link href="{% mix 'app.css' %}" rel="stylesheet">
+    {% endblock %}
 </head>
 <body class="bg-blue-900">
 

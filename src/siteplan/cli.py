@@ -14,11 +14,13 @@ from .app import App
 def cli(ctx, debug=False, app=None, settings=None):
     sys.path.insert(0, os.getcwd())
     ctx.ensure_object(dict)
+    os.environ["DJANGO_SETTINGS_MODULE"] = settings
     if app is not None:
         app = gunicorn.util.import_app(app)
         print("Got custom app,", app)
     else:
-        app = App()
+        from django.core.wsgi import get_wsgi_application
+        app = get_wsgi_application()
 
     ctx.obj["siteplan_app"] = app
     ctx.obj["siteplan_settings"] = settings
@@ -41,13 +43,8 @@ def manage(ctx, manage_args):
             "forget to activate a virtual environment?"
         ) from exc
 
-    os.environ["DJANGO_SETTINGS_MODULE"] = ctx.obj["siteplan_settings"]
     manage_args = list(manage_args)
     execute_from_command_line(["manage"] + manage_args)
-    if len(manage_args) > 0 and manage_args[0] == "migrate":
-        from .app import setup
-        print("Running initial setup")
-        setup()
 
 
 @click.option("--address", "-b", default="127.0.0.1:9000")
@@ -57,7 +54,7 @@ def manage(ctx, manage_args):
 @click.pass_context
 def run(ctx, address, no_serve_static=False, reload_=False):
     from .server import run as server_run
-    os.environ["DJANGO_SETTINGS_MODULE"] = ctx.obj["siteplan_settings"]
+
     return server_run(ctx.obj["siteplan_app"], address, not no_serve_static, reload_)
 
 
@@ -65,6 +62,25 @@ def run(ctx, address, no_serve_static=False, reload_=False):
 @click.pass_context
 def hello(ctx):
     click.echo(ctx.parent)
+
+
+@cli.command()
+@click.pass_context
+def init_app(ctx):
+    from shutil import copytree
+    from siteplan.settings import SETTINGS_DIR
+    copytree(SETTINGS_DIR / "myapp_templates", ".", dirs_exist_ok=True)
+    copytree(SETTINGS_DIR / "templates", "myapp/templates", dirs_exist_ok=True)
+
+    from django.core.management import call_command
+    from .app import setup
+    import subprocess
+
+    subprocess.run(["bun", "run", "mix"])
+    call_command("collectstatic", interactive=False)
+    call_command("migrate")
+    print("Populating data ...")
+    setup()
 
 #cli.add_command(manage)
 #cli.add_command(run_gunicorn)

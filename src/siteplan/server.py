@@ -42,5 +42,5 @@ def run(app, address="127.0.0.1:9000", serve_static=False, reload_=False):
         app.add_files(static_root_dir, prefix="/static/")
         app.add_files(static_dir, prefix="/static/")
 
-    ret = GunicornApplication(app, options).run()
+    ret = app = GunicornApplication(app, options).run()
     return ret
