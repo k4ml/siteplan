@@ -15,7 +15,7 @@ let staticPath = "myapp/static/mix/build";
 let resourcesPath = "myapp/fe";
 
 mix.setResourceRoot("/static/mix/build"); // setResroucesRoots add prefix to url() in scss on example: from /images/close.svg to /static/images/close.svg
-mix.setPublicPath("public/mix/build"); // Path where mix-manifest.json is created
+mix.setPublicPath(staticPath); // Path where mix-manifest.json is created
 
 // if you don't need browser-sync feature you can remove this lines
 if (process.argv.includes("--browser-sync")) {
