@@ -76,6 +76,7 @@ def init_app(ctx):
     from .app import setup
     import subprocess
 
+    os.environ["DJANGO_SETTINGS_MODULE"] = "myapp.settings"
     subprocess.run(["bun", "run", "mix"])
     call_command("collectstatic", interactive=False)
     call_command("migrate")
