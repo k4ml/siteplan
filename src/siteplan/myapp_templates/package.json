@@ -1,0 +1,39 @@
+{
+  "name": "myapp",
+  "version": "0.0.0",
+  "description": "Some description",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run development",
+    "development": "mix",
+    "watch": "mix watch",
+    "hot": "mix watch --hot",
+    "prod": "npm run production",
+    "production": "mix --production"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "cross-env": "^7.0.2",
+    "laravel-mix": "^6.0.49",
+    "postcss": "^8.4.30",
+    "resolve-url-loader": "^3.1.2",
+    "sass": "^1.26.10",
+    "sass-loader": "^8.0.2",
+    "tailwindcss": "^3.3.3"
+  },
+  "dependencies": {
+    "@material-tailwind/html": "^2.0.0",
+    "@tailwindcss/forms": "^0.3.2",
+    "@tailwindcss/typography": "^0.5.10",
+    "alpinejs": "^2.8.2",
+    "axios": "^0.21.1",
+    "tailwindcss-tables": "^0.4.0",
+    "windstrap": "^0.0.4"
+  },
+  "engines": {
+    "node": "14.20.0"
+  }
+}
