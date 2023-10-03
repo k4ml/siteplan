@@ -16,13 +16,12 @@ venv/bin/pip install -U siteplan --pre
 Then run `siteplan`:-
 
 ```
+venv/bin/siteplan init-app
 venv/bin/siteplan run
 ```
 
-It possible to add your own views (controller) and models for more control and but most of the time you just want to customize the templates when working with `siteplan`.
+It possible to add your own views (controller) and models for more control and but most of the time you just want to customize the templates when working with `siteplan`. The templates are in `myapp/templates/` directory.
 
-You can add your own templates directory in your app root:-
-
-```
-mkdir -p templates/siteplan
-```
+## Requirements
+- Python 3.8 and above
+- bun
