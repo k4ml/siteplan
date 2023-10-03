@@ -14,6 +14,9 @@ from .app import App
 def cli(ctx, debug=False, app=None, settings=None):
     sys.path.insert(0, os.getcwd())
     ctx.ensure_object(dict)
+
+    if os.path.isdir("myapp"):
+        settings = "myapp.settings"
     os.environ["DJANGO_SETTINGS_MODULE"] = settings
     if app is not None:
         app = gunicorn.util.import_app(app)
