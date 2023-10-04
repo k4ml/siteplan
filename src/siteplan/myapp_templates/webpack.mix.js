@@ -26,6 +26,7 @@ if (process.argv.includes("--browser-sync")) {
 // Refer the file that was created in Step 2 to be compile
 // mix.js(`${resourcesPath}/js/app.js`, `${staticPath}/`);
 mix.js(`${resourcesPath}/js/main.js`, `${staticPath}/`);
+mix.js(`${resourcesPath}/js/lib.js`, `${staticPath}/`);
 mix.scripts(`${resourcesPath}/js/admin`, `${staticPath}/admin.js`);
 mix.scripts(`${resourcesPath}/js/custom`, `${staticPath}/custom.js`);
 // mix.scripts(`${resourcesPath}/js/page`, `${staticPath}/`);
