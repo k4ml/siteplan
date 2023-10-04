@@ -10,7 +10,7 @@ Create the app directory:-
 ```
 mkdir myapp && cd myapp
 python -mvenv venv
-venv/bin/pip install -U siteplan --pre
+venv/bin/pip install git+https://github.com/k4ml/siteplan.git
 ```
 
 Then run `siteplan`:-
