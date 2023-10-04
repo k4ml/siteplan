@@ -82,8 +82,8 @@ def init_app(ctx):
     os.environ["DJANGO_SETTINGS_MODULE"] = "myapp.settings"
     subprocess.run(["bun", "install"])
     subprocess.run(["bun", "run", "mix"])
-    call_command("collectstatic", interactive=False)
-    call_command("migrate")
+    subprocess.run(["./venv/bin/siteplan", "manage", "collectstatic", "--no-input"])
+    subprocess.run(["./venv/bin/siteplan", "manage", "migrate"])
     print("Populating data ...")
     setup()
 
