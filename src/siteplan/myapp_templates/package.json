@@ -30,6 +30,7 @@
     "@tailwindcss/typography": "^0.5.10",
     "alpinejs": "^2.8.2",
     "axios": "^0.21.1",
+    "sweetalert2": "^11.7.31",
     "tailwindcss-tables": "^0.4.0",
     "windstrap": "^0.0.4"
   },
