@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 
     'modelcluster',
     'taggit',
+    'compressor',
 ]
 
 MIDDLEWARE = [
@@ -142,6 +143,19 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'public')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    # other finders..
+    'compressor.finders.CompressorFinder',
+)
+
+COMPRESS_PRECOMPILERS = (
+    #('text/x-sass', 'sass {infile} {outfile}'),
+    ('text/javascript', 'bun build {infile} > {outfile}'),
+    #('text/foobar', 'path.to.MyPrecompilerFilter'),
+)
+COMPRESS_ENABLED = True
 
 # DJANGOMIX
 PUBLIC_URL = LARAVELMIX_PUBLIC_URL = STATIC_URL + 'mix/build'
@@ -155,3 +169,8 @@ print(BASE_DIR)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 WAGTAIL_SITE_NAME = 'SitePlan'
+
+ALLOWED_HOSTS = [
+    "localhost",
+]
+DEBUG = False

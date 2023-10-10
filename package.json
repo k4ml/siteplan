@@ -4,6 +4,7 @@
   "description": "Some description",
   "main": "index.js",
   "scripts": {
+    "css": "tailwind -i src/siteplan/static/css/input.css -o src/siteplan/static/css/app.css",
     "dev": "npm run development",
     "development": "mix",
     "watch": "mix watch",
