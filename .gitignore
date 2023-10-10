@@ -139,3 +139,4 @@ cython_debug/
 node_modules
 
 src/siteplan/static/mix
+public/
