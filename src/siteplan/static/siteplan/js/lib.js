@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import htmx from 'htmx.org';
 
 function showAlert() {
     return Swal.fire({
@@ -10,4 +11,19 @@ function showAlert() {
     })
 }
 
-export { showAlert };
+document.body.addEventListener('htmx:confirm', function(evt) {
+    evt.preventDefault();
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Are you sure you are sure?",
+      icon: "warning",
+      buttons: true,
+      dangerMode: true,
+    }).then((confirmed) => {
+      if (confirmed) {
+        evt.detail.issueRequest();
+      }
+   });
+});
+
+export { showAlert, htmx };

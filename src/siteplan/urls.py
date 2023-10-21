@@ -23,7 +23,10 @@ from wagtail.documents import urls as wagtaildocs_urls
 from django.conf import settings
 from django.conf.urls.static import static
 
+from .views import hello
+
 urlpatterns = [
+    path("hello/", hello),
     path('cms/', include(wagtailadmin_urls)),
     path('documents/', include(wagtaildocs_urls)),
     path('admin/', admin.site.urls),

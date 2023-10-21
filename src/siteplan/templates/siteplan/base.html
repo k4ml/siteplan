@@ -16,7 +16,7 @@
     {% endcompress %}
     {% endblock %}
 </head>
-<body class="bg-blue-900">
+<body class="bg-blue-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
     <!-- Header -->
     <header class="bg-blue-900 text-white py-4 flex items-center">
@@ -33,7 +33,7 @@
     <!-- Footer -->
     <footer class="bg-blue-900 text-white py-4">
       <div class="text-center mt-8">
-        <a id="btn-learn-more" href="https://github.com/k4ml/siteplan" class="bg-white text-blue-900 hover:bg-blue-700 text-xl font-semibold py-3 px-6 rounded-full inline-block transition duration-300 ease-in-out">
+        <a id="btn-learn-more" hx-post="/hello/" hx-confirm class="bg-white text-blue-900 hover:bg-blue-700 text-xl font-semibold py-3 px-6 rounded-full inline-block transition duration-300 ease-in-out">
             Learn More
         </a>
       </div>
@@ -47,14 +47,5 @@
 </body>
 {% compress js %}
 <script src="{% static 'siteplan/js/main.js' %}" type="text/javascript"></script>
-<script>
-    document.getElementById("btn-learn-more").addEventListener("click", async function (e) {
-        e.preventDefault();
-        res = await showAlert();
-        if (res.isConfirmed) {
-            window.location.href = e.target.href;
-        }
-    });
-</script>
 {% endcompress %}
 </html>
