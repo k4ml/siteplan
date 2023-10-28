@@ -1,7 +1,5 @@
-const withMT = require("@material-tailwind/html/utils/withMT");
-
 /** @type {import('tailwindcss').Config} */
-module.exports = withMT({
+module.exports = {
   content: [
     './myapp/fe/**/*.js',
     './myapp/templates/**/*.html'
@@ -25,4 +23,4 @@ module.exports = withMT({
     require('@tailwindcss/typography'),
     require('windstrap')
   ],
-})
+}
