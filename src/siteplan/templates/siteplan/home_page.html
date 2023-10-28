@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block content %}
-<main class="py-4 flex items-center bg-white">
-  <div class="container mx-auto text-center">
+<main class="grid grid-cols-2 py-4 flex">
+  <div class="ml-10">
         <h2 class="text-4xl mt-4 text-blue-500 font-bold">What?</h1>
         <p class="text-lg">
           A new way to build Django website. Get away from the initial boilerplate project and apps. Siteplan comes with CMS, e-commerce store, payment gateway, task queue and many more features commonly found in modern websites.
@@ -12,9 +12,14 @@
         <p class="text-lg">
           Run the following command:-
         </p>
-        <pre class="text-left">
-          pip install siteplan
+        <pre class="text-left whitespace-pre">
+          <code>
+pip install siteplan
+          </code>
         </pre>
+  </div>
+  <div class="mx-auto text-center">
+        <img class="rounded-lg" src="{% static 'images/featured-small.jpg' %}"></img>
   </div>
 </main>
 {% endblock %}
