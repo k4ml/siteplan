@@ -68,7 +68,7 @@ def hello(ctx):
 
 
 @click.option("--copy-dir/--no-copy-dir", default=True)
-@click.option("--siteplan-exe")
+@click.option("--siteplan-exe", default="./venv/bin/siteplan")
 @cli.command()
 @click.pass_context
 def init_app(ctx, copy_dir=True, siteplan_exe="./venv/bin/siteplan"):
