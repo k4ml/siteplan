@@ -154,6 +154,7 @@ COMPRESS_PRECOMPILERS = (
     #('text/x-sass', 'sass {infile} {outfile}'),
     ('text/javascript', 'bun build {infile} > {outfile}'),
     #('text/foobar', 'path.to.MyPrecompilerFilter'),
+    ('text/tailwindcss', 'bun run tailwind -i {infile} -o {outfile}'),
 )
 COMPRESS_ENABLED = True
 
