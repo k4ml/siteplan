@@ -67,13 +67,16 @@ def hello(ctx):
     click.echo(ctx.parent)
 
 
+@click.option("--copy-dir/--no-copy-dir", default=True)
+@click.option("--siteplan-exe")
 @cli.command()
 @click.pass_context
-def init_app(ctx):
-    from shutil import copytree
-    from siteplan.settings import SETTINGS_DIR
-    copytree(SETTINGS_DIR / "myapp_templates", ".", dirs_exist_ok=True)
-    copytree(SETTINGS_DIR / "templates", "myapp/templates", dirs_exist_ok=True)
+def init_app(ctx, copy_dir=True, siteplan_exe="./venv/bin/siteplan"):
+    if copy_dir:
+        from shutil import copytree
+        from siteplan.settings import SETTINGS_DIR
+        copytree(SETTINGS_DIR / "myapp_templates", ".", dirs_exist_ok=True)
+        copytree(SETTINGS_DIR / "templates", "myapp/templates", dirs_exist_ok=True)
 
     from django.core.management import call_command
     from .app import setup
@@ -82,8 +85,8 @@ def init_app(ctx):
     os.environ["DJANGO_SETTINGS_MODULE"] = "myapp.settings"
     subprocess.run(["bun", "install"])
     #subprocess.run(["bun", "run", "mix"])
-    subprocess.run(["./venv/bin/siteplan", "manage", "collectstatic", "--no-input"])
-    subprocess.run(["./venv/bin/siteplan", "manage", "migrate"])
+    subprocess.run([siteplan_exe, "manage", "collectstatic", "--no-input"])
+    subprocess.run([siteplan_exe, "manage", "migrate"])
     print("Populating data ...")
     setup()
 
