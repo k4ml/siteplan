@@ -5,20 +5,18 @@ register = template.Library()
 
 
 @register.filter
-def getattr(obj, attr):
+def get_attribute(obj, attr):
     """Get attribute from object."""
+    if obj is None:
+        return ''
+
     if attr == '__str__':
         return str(obj)
-    
+
+    # Use Python's built-in getattr function directly
+    import builtins
     try:
-        # Try direct attribute access
-        value = getattr(obj, attr)
-        
-        # If it's callable (like a method), call it
-        if callable(value):
-            return value()
-        
-        return value
+        return builtins.getattr(obj, attr)
     except (AttributeError, TypeError):
         return ''
 
@@ -39,13 +37,14 @@ def add(value, arg):
 def crud_url(url_namespace, action, pk=None):
     """Generate CRUD URL."""
     from django.urls import reverse
-    
-    url_name = f'{url_namespace}:{action}'
-    
+
+    url_name = f'{url_namespace}_{action}'
+
+    # Use reverse with current_app=None to avoid namespace issues
     if pk:
-        return reverse(url_name, kwargs={'pk': pk})
-    
-    return reverse(url_name)
+        return reverse(url_name, kwargs={'pk': pk}, current_app=None)
+
+    return reverse(url_name, current_app=None)
 
 
 @register.inclusion_tag('crud/components/field.html')
@@ -84,27 +83,27 @@ def get_field_display(obj, field):
     """Get display value for a field, handling special cases."""
     if field == '__str__':
         return str(obj)
-    
+
     try:
         value = getattr(obj, field)
-        
+
         # Check for get_FOO_display method (for choices)
         display_method = f'get_{field}_display'
         if hasattr(obj, display_method):
             return getattr(obj, display_method)()
-        
+
         # Handle callables
         if callable(value):
             return value()
-        
+
         # Handle None
         if value is None:
             return '-'
-        
+
         # Handle boolean
         if isinstance(value, bool):
             return '✓' if value else '✗'
-        
+
         return value
     except (AttributeError, TypeError):
         return '-'
