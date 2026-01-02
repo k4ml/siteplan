@@ -60,7 +60,7 @@ class Book(models.Model):
     author = models.CharField(max_length=100)
     published_date = models.DateField()
     isbn = models.CharField(max_length=13)
-    
+
     def __str__(self):
         return self.title
 ```
@@ -89,13 +89,15 @@ registry.register(BookCRUD)
 registry.register(AuthorCRUD)
 
 urlpatterns = [
-    path('library/', include(registry.get_urls())),
+    path('crud/', include(registry.get_urls())),
 ]
 ```
 
 ### 4. Access your CRUD interface
 
-Visit `/book/` to see your CRUD interface!
+Visit `/crud/book/` to see your CRUD interface!
+
+**Note**: The library uses underscore-separated URL names (e.g., `book_list`, `book_create`, `book_update`, `book_delete`) instead of colon-separated names to avoid conflicts with Django's namespace system.
 
 ## Configuration Options
 
@@ -104,15 +106,15 @@ Visit `/book/` to see your CRUD interface!
 ```python
 class BookCRUD(CRUDView):
     model = Book
-    
+
     # Display configuration
     list_display = ['title', 'author', 'published_date', 'status']
     list_display_links = ['title']  # Clickable fields (default: first field)
-    
+
     # Search and filtering
     search_fields = ['title', 'author', 'isbn']
     list_filter = ['publisher', 'language', 'status']
-    
+
     # Ordering and pagination
     ordering = ['-published_date']
     paginate_by = 25  # Items per page
@@ -123,13 +125,13 @@ class BookCRUD(CRUDView):
 ```python
 class BookCRUD(CRUDView):
     model = Book
-    
+
     # Simple field list
     fields = ['title', 'author', 'publisher', 'isbn']
-    
+
     # Or exclude fields
     exclude = ['created_at', 'updated_at']
-    
+
     # Or use fieldsets (like admin)
     fieldsets = (
         ('Basic Information', {
@@ -139,7 +141,7 @@ class BookCRUD(CRUDView):
             'fields': ('publisher', 'isbn', 'published_date')
         }),
     )
-    
+
     # Custom form class
     form_class = CustomBookForm
 ```
@@ -149,7 +151,7 @@ class BookCRUD(CRUDView):
 ```python
 class BookCRUD(CRUDView):
     model = Book
-    
+
     # Override default templates
     list_template = 'myapp/custom_list.html'
     form_template = 'myapp/custom_form.html'
@@ -161,7 +163,7 @@ class BookCRUD(CRUDView):
 ```python
 class BookCRUD(CRUDView):
     model = Book
-    
+
     success_message_create = "Book '{object}' was added successfully!"
     success_message_update = "Book '{object}' was updated."
     success_message_delete = "Book '{object}' was deleted."
@@ -173,23 +175,52 @@ class BookCRUD(CRUDView):
 class BookCRUD(CRUDView):
     model = Book
     fields = ['title', 'author']
-    
+
     def get_queryset(self, request):
         """Customize queryset (e.g., filter by user)"""
         queryset = super().get_queryset(request)
-        
+
         if not request.user.is_staff:
             queryset = queryset.filter(published=True)
-        
+
         return queryset.select_related('publisher')
-    
+
     def get_success_url(self, obj=None):
         """Customize redirect after form submission"""
         if obj:
-            return reverse('book:detail', kwargs={'pk': obj.pk})
+            return reverse('book_detail', kwargs={'pk': obj.pk})
         return super().get_success_url(obj)
 ```
 
+
+## Template Tags
+
+The library provides custom template tags for URL generation and field rendering.
+
+### URL Generation
+
+Use the `crud_url` tag instead of Django's `url` tag:
+
+```html
+{% load django_umin_tags %}
+
+<!-- Correct usage -->
+<a href="{% crud_url 'book' 'create' %}">Add Book</a>
+<a href="{% crud_url 'book' 'update' book.pk %}">Edit Book</a>
+
+<!-- Old usage (no longer supported) -->
+<a href="{% url 'book:create' %}">Add Book</a>
+```
+
+### Field Rendering
+
+Use the `get_attribute` filter to safely access object attributes:
+
+```html
+{% load django_umin_tags %}
+
+{{ book|get_attribute:'title' }}
+```
 
 ## Template Customization
 
@@ -202,8 +233,10 @@ your_app/templates/django_umin/
 ├── base.html          # Base layout
 ├── list.html          # List view
 ├── list_htmx.html     # List view HTMX partial
-├── form.html          # Create/Update form
-└── delete.html        # Delete confirmation
+├── form.html          # Create/Update form (full page)
+├── form_htmx.html     # Create/Update form (HTMX partial)
+└── delete.html        # Delete confirmation (full page)
+└── delete_htmx.html   # Delete confirmation (HTMX partial)
 ```
 
 ### Example: Custom Base Template
@@ -211,14 +244,15 @@ your_app/templates/django_umin/
 ```html
 <!-- templates/django_umin/base.html -->
 {% extends "django_umin/base.html" %}
+{% load django_umin_tags %}
 
 {% block nav_title %}
     My Custom App
 {% endblock %}
 
 {% block nav_items %}
-    <a href="{% url 'book:list' %}">Books</a>
-    <a href="{% url 'author:list' %}">Authors</a>
+    <a href="{% crud_url 'book' 'list' %}">Books</a>
+    <a href="{% crud_url 'author' 'list' %}">Authors</a>
 {% endblock %}
 
 {% block extra_head %}
@@ -251,7 +285,7 @@ class BookForm(forms.ModelForm):
     class Meta:
         model = Book
         fields = '__all__'
-    
+
     def clean_isbn(self):
         isbn = self.cleaned_data.get('isbn')
         if len(isbn) != 13:
@@ -270,7 +304,7 @@ class PublicBookCRUD(CRUDView):
     model = Book
     fields = ['title', 'author']
     list_display = ['title', 'author']
-    
+
     def get_queryset(self, request):
         return Book.objects.filter(published=True)
 
@@ -361,6 +395,19 @@ Ensure `{% csrf_token %}` is present in your forms and Django's CSRF middleware 
 
 Make sure your app is listed before `django_umin` in `INSTALLED_APPS` to override templates.
 
+### URL reverse errors
+
+The library uses underscore-separated URL names (e.g., `book_list`, `book_create`) instead of colon-separated names. Use the `crud_url` template tag:
+
+```html
+{% load django_umin_tags %}
+<a href="{% crud_url 'book' 'list' %}">Books</a>
+```
+
+### Template tag recursion errors
+
+Make sure you're using `{% load django_umin_tags %}` and the correct filter names (`get_attribute` instead of `getattr`).
+
 ## Examples Repository
 
 Check the `examples/` directory for complete working examples:
@@ -368,6 +415,29 @@ Check the `examples/` directory for complete working examples:
 - Simple blog CRUD
 - E-commerce product management
 - Multi-tenant application
+
+## Migration Guide
+
+#### URL Name Changes
+
+- **Old**: `book:list`, `book:create`, `book:update`, `book:delete`
+- **New**: `book_list`, `book_create`, `book_update`, `book_delete`
+
+#### Template Tag Changes
+
+- **Old**: `{% url 'book:create' %}`
+- **New**: `{% crud_url 'book' 'create' %}`
+
+#### Template Filter Changes
+
+- **Old**: `{{ obj|getattr:'field' }}`
+- **New**: `{{ obj|get_attribute:'field' }}`
+
+#### Template Updates
+
+1. Add `{% load django_umin_tags %}` to all templates
+2. Replace all `{% url %}` tags with `{% crud_url %}` tags
+3. Replace all `{{ obj|getattr:field }}` with `{{ obj|get_attribute:field }}`
 
 ## Contributing
 
