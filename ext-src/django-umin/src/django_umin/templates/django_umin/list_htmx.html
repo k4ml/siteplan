@@ -34,6 +34,19 @@
 {% if object_list %}
 <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
+    <style>
+    /* Ensure table cells wrap text properly and don't cause horizontal overflow */
+    .table-cell-wrap {
+        word-break: break-word;
+        max-width: 300px; /* Limit width for very long content */
+    }
+
+    /* Ensure action buttons are always visible and don't get cut off */
+    .action-buttons {
+        white-space: nowrap;
+        min-width: 100px;
+    }
+    </style>
         <thead class="bg-gray-50">
             <tr>
                 {% for field in list_display %}
@@ -50,7 +63,7 @@
             {% for obj in object_list %}
             <tr class="hover:bg-gray-50 transition-colors">
                 {% for field in list_display %}
-                <td class="px-6 py-4 whitespace-nowrap text-sm {% if field in list_display_links %}font-medium text-indigo-600{% else %}text-gray-900{% endif %}">
+                <td class="px-6 py-4 text-sm table-cell-wrap {% if field in list_display_links %}font-medium text-indigo-600{% else %}text-gray-900{% endif %}">
                     {% if field in list_display_links %}
                     <a href="{% crud_url url_namespace 'update' obj.pk %}"
                        class="hover:text-indigo-900 hover:underline">
@@ -69,7 +82,7 @@
                     {% endif %}
                 </td>
                 {% endfor %}
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td class="px-6 py-4 text-right text-sm font-medium action-buttons">
                     <div class="flex justify-end space-x-2">
                         <a href="{% crud_url url_namespace 'update' obj.pk %}"
                            class="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded transition-colors"
