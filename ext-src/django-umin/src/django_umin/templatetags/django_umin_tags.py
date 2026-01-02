@@ -137,3 +137,19 @@ def is_textarea(field):
 def is_file(field):
     """Check if field is a file input."""
     return field.field.widget.__class__.__name__ in ['FileInput', 'ClearableFileInput']
+
+
+@register.filter
+def is_date(field):
+    """Check if field is a date input."""
+    try:
+        # Try to get widget from field.field (Django form field structure)
+        widget = field.field.widget
+    except AttributeError:
+        # If field doesn't have field attribute, try direct widget access
+        try:
+            widget = field.widget
+        except AttributeError:
+            return False
+
+    return widget.__class__.__name__ == 'DateInput'

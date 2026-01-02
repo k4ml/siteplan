@@ -55,7 +55,16 @@
                 </div>
                 {% else %}
                 <div>
+                    {% if field|is_date %}
+                    <input type="date"
+                           name="{{ field.name }}"
+                           id="{{ field.id_for_label }}"
+                           value="{{ field.value|date:'Y-m-d' }}"
+                           class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm {% if field.errors %}border-red-300 focus:border-red-500 focus:ring-red-500{% endif %}"
+                           {% if field.required %}required{% endif %}>
+                    {% else %}
                     {{ field }}
+                    {% endif %}
                     {% if field.help_text %}
                     <p class="mt-1 text-sm text-gray-500">{{ field.help_text|safe }}</p>
                     {% endif %}
