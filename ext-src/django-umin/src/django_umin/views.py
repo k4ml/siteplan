@@ -274,10 +274,55 @@ class CRUDDeleteView(DeleteView):
             obj
         )
         response = super().form_valid(form)
-        messages.success(self.request, msg)
 
         if self.request.headers.get('HX-Request'):
-            response['HX-Redirect'] = self.get_success_url()
+            # For HTMX requests, return the updated list content instead of redirecting
+            # This ensures the UI updates immediately and the success message is shown
+            from django.template.loader import render_to_string
+            from django.contrib import messages
+
+            messages.success(self.request, msg)
+
+            # Get the updated queryset
+            queryset = self.crud_view.get_queryset(self.request)
+
+            # Render the list content with messages
+            context = {
+                'object_list': queryset,
+                'crud_view': self.crud_view,
+                'model_name': self.crud_view.model._meta.verbose_name,
+                'model_name_plural': self.crud_view.model._meta.verbose_name_plural,
+                'search_query': self.request.GET.get('q', ''),
+                'list_display': self.crud_view.list_display,
+                'list_display_links': self.crud_view.list_display_links,
+                'has_add_permission': True,
+                'url_namespace': self.crud_view.get_url_namespace(),
+                'messages': list(messages.get_messages(self.request)),
+            }
+
+            # Check if pagination is needed
+            paginate_by = self.crud_view.paginate_by
+            if paginate_by:
+                paginator = Paginator(queryset, paginate_by)
+                page_number = self.request.GET.get('page', 1)
+                page_obj = paginator.get_page(page_number)
+                context.update({
+                    'page_obj': page_obj,
+                    'paginator': paginator,
+                    'is_paginated': True,
+                })
+            else:
+                context['is_paginated'] = False
+
+            # Render the list content
+            html = render_to_string('django_umin/list_htmx.html', context, self.request)
+
+            # Return the HTML content with HX-Trigger for messages
+            response = HttpResponse(html)
+            response['HX-Trigger'] = 'showMessage'
+            response['HX-Trigger-After-Swap'] = 'showMessage'
+
+            return response
 
         return response
 

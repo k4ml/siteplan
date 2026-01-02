@@ -97,4 +97,27 @@
         {% include "django_umin/list_htmx.html" %}
     </div>
 </div>
+
+<script>
+// Handle HTMX message display
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen for HTMX triggers
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'results-table') {
+            // Check if there are HTMX messages in the swapped content
+            const htmxMessages = evt.detail.target.querySelector('#htmx-messages');
+            if (htmxMessages) {
+                // Move messages to the main messages container
+                const mainMessages = document.getElementById('messages');
+                if (mainMessages) {
+                    // Clear existing messages first
+                    mainMessages.innerHTML = htmxMessages.innerHTML;
+                    // Remove the HTMX messages from the swapped content
+                    htmxMessages.remove();
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}
