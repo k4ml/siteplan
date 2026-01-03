@@ -1,6 +1,6 @@
 # crud/urls.py
 from django.urls import path
-from .views import CRUDListView, CRUDCreateView, CRUDUpdateView, CRUDDeleteView
+from .views import CRUDListView, CRUDCreateView, CRUDUpdateView, CRUDDeleteView, CRUDIndexView
 
 
 class CRUDRegistry:
@@ -27,8 +27,10 @@ class CRUDRegistry:
         return crud_view_class
 
     def get_urls(self):
-        """Generate URL patterns for all registered CRUD views."""
-        urlpatterns = []
+        """Generate URL patterns for all registered CRUD views including index."""
+        urlpatterns = [
+            path('', CRUDIndexView.as_view(), name='crud_index'),
+        ]
 
         for model_name, crud_view in self._registry.items():
             patterns = self._generate_urls(crud_view)
@@ -70,6 +72,17 @@ class CRUDRegistry:
 
 # Global registry instance
 registry = CRUDRegistry()
+
+
+def get_crud_urls():
+    """Get all CRUD URLs including the index view."""
+    urlpatterns = [
+        path('', CRUDIndexView.as_view(), name='crud_index'),
+    ]
+    urlpatterns.extend(registry.get_urls())
+    return urlpatterns
+
+
 
 
 # Alternative: Manual URL generation helper

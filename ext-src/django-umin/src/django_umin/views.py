@@ -9,6 +9,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 
 
+
+
 class CRUDView:
     """
     Base CRUD view with Django admin-style API.
@@ -26,6 +28,8 @@ class CRUDView:
 
     # Model configuration
     model = None
+
+
 
     # List view configuration
     list_display = None
@@ -63,7 +67,28 @@ class CRUDView:
             raise ValueError("CRUDView requires 'model' to be set")
 
         if self.list_display is None:
-            self.list_display = ['__str__']
+            # Provide sensible defaults for list_display
+            # Try to use common fields, falling back to __str__
+            from django.db import models as django_models
+            from django.core.exceptions import FieldDoesNotExist
+            field_names = []
+
+            # Look for common fields that are good for display
+            common_fields = ['name', 'title', 'slug', 'email', 'username', 'first_name', 'last_name']
+            for field_name in common_fields:
+                try:
+                    field = self.model._meta.get_field(field_name)
+                    if isinstance(field, django_models.Field):
+                        field_names.append(field_name)
+                        break  # Use the first common field found
+                except FieldDoesNotExist:
+                    pass
+
+            if field_names:
+                self.list_display = field_names
+            else:
+                # Fall back to __str__ method
+                self.list_display = ['__str__']
 
         if self.list_display_links is None:
             self.list_display_links = [self.list_display[0]]
@@ -101,6 +126,35 @@ class CRUDView:
         fields = self.fields
         if self.fieldsets:
             fields = flatten_fieldsets(self.fieldsets)
+
+        # Provide sensible defaults if fields and exclude are not defined
+        if not fields and not self.exclude:
+            # Use all fields by default, excluding auto fields and non-editable fields
+            from django.db import models as django_models
+            from django.core.exceptions import FieldError
+
+            field_names = []
+            for field in self.model._meta.get_fields():
+                # Skip non-field attributes
+                if not hasattr(field, 'name'):
+                    continue
+
+                # Skip auto-created fields (like id)
+                if hasattr(field, 'auto_created') and field.auto_created:
+                    continue
+
+                # Skip non-editable fields
+                if hasattr(field, 'editable') and not field.editable:
+                    continue
+
+                # Include the field
+                field_names.append(field.name)
+
+            if field_names:
+                fields = field_names
+            else:
+                # Fallback to '__all__' if no fields found
+                fields = '__all__'
 
         return modelform_factory(
             self.model,
@@ -332,5 +386,49 @@ class CRUDDeleteView(DeleteView):
             'crud_view': self.crud_view,
             'model_name': self.crud_view.model._meta.verbose_name,
             'url_namespace': self.crud_view.get_url_namespace(),
+        })
+        return context
+
+
+class CRUDIndexView(ListView):
+    """Index view showing all registered CRUD models similar to Django admin."""
+
+    template_name = 'django_umin/index.html'
+
+    def get_queryset(self):
+        """Get all registered CRUD models."""
+        from .urls import registry
+        return list(registry._registry.values())
+
+    def get_context_data(self, **kwargs):
+        # Don't call super() since we're not using the ListView's object_list
+        context = {}
+
+        # Get all registered CRUD views
+        crud_views = self.get_queryset()
+
+        # Organize by app if possible
+        app_models = {}
+        for crud_view in crud_views:
+            model = crud_view.model
+            app_label = model._meta.app_label
+
+            if app_label not in app_models:
+                app_models[app_label] = []
+
+            app_models[app_label].append({
+                'name': model._meta.verbose_name_plural,
+                'model_name': model._meta.model_name,
+                'app_label': app_label,
+                'list_url': f'/{model._meta.model_name}/',  # Will be overridden by template
+                'add_url': f'/{model._meta.model_name}/create/',  # Will be overridden by template
+                'verbose_name': model._meta.verbose_name,
+                'list_url_name': f'{model._meta.model_name}_list',
+                'add_url_name': f'{model._meta.model_name}_create',
+            })
+
+        context.update({
+            'app_models': app_models,
+            'total_models': len(crud_views),
         })
         return context

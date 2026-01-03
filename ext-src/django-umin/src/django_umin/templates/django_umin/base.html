@@ -5,19 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CRUD{% endblock %}</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
+
     <!-- Alpine.js for interactions -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     <style>
         [x-cloak] { display: none !important; }
-        
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -33,19 +33,19 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
-        
+
         /* HTMX loading states */
         .htmx-swapping {
             opacity: 0;
             transition: opacity 200ms ease-in;
         }
-        
+
         .htmx-settling {
             opacity: 1;
             transition: opacity 200ms ease-out;
         }
     </style>
-    
+
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -59,6 +59,11 @@
                     </h1>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <!-- Home/Index link -->
+                    <a href="{% url 'crud_index' %}"
+                       class="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+                        Home
+                    </a>
                     {% block nav_items %}{% endblock %}
                 </div>
             </div>
