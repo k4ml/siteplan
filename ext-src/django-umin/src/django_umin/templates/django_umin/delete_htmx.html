@@ -57,7 +57,7 @@
                 <form method="post"
                       hx-post="{% crud_url url_namespace 'delete' object.pk %}"
                       hx-target="#results-table"
-                      hx-swap="outerHTML"
+                      hx-swap="innerHTML"
                       class="inline-block">
                     {% csrf_token %}
                     <button type="submit"
