@@ -9,8 +9,6 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 
 
-
-
 class CRUDView:
     """
     Base CRUD view with Django admin-style API.
@@ -29,8 +27,6 @@ class CRUDView:
     # Model configuration
     model = None
 
-
-
     # List view configuration
     list_display = None
     list_display_links = None
@@ -47,12 +43,12 @@ class CRUDView:
 
     # Template configuration
     template_name_suffix = None
-    list_template = 'django_umin/list.html'
-    form_template = 'django_umin/form.html'
-    delete_template = 'django_umin/delete.html'
+    list_template = "django_umin/list.html"
+    form_template = "django_umin/form.html"
+    delete_template = "django_umin/delete.html"
 
     # HTMX configuration
-    htmx_template_suffix = '_htmx'
+    htmx_template_suffix = "_htmx"
 
     # Permissions
     permission_required = None
@@ -71,10 +67,19 @@ class CRUDView:
             # Try to use common fields, falling back to __str__
             from django.db import models as django_models
             from django.core.exceptions import FieldDoesNotExist
+
             field_names = []
 
             # Look for common fields that are good for display
-            common_fields = ['name', 'title', 'slug', 'email', 'username', 'first_name', 'last_name']
+            common_fields = [
+                "name",
+                "title",
+                "slug",
+                "email",
+                "username",
+                "first_name",
+                "last_name",
+            ]
             for field_name in common_fields:
                 try:
                     field = self.model._meta.get_field(field_name)
@@ -88,7 +93,7 @@ class CRUDView:
                 self.list_display = field_names
             else:
                 # Fall back to __str__ method
-                self.list_display = ['__str__']
+                self.list_display = ["__str__"]
 
         if self.list_display_links is None:
             self.list_display_links = [self.list_display[0]]
@@ -102,9 +107,10 @@ class CRUDView:
             queryset = queryset.order_by(*self.ordering)
 
         # Apply search
-        search_query = request.GET.get('q', '')
+        search_query = request.GET.get("q", "")
         if search_query and self.search_fields:
             from django.db.models import Q
+
             query = Q()
             for field in self.search_fields:
                 query |= Q(**{f"{field}__icontains": search_query})
@@ -136,15 +142,15 @@ class CRUDView:
             field_names = []
             for field in self.model._meta.get_fields():
                 # Skip non-field attributes
-                if not hasattr(field, 'name'):
+                if not hasattr(field, "name"):
                     continue
 
                 # Skip auto-created fields (like id)
-                if hasattr(field, 'auto_created') and field.auto_created:
+                if hasattr(field, "auto_created") and field.auto_created:
                     continue
 
                 # Skip non-editable fields
-                if hasattr(field, 'editable') and not field.editable:
+                if hasattr(field, "editable") and not field.editable:
                     continue
 
                 # Include the field
@@ -154,24 +160,20 @@ class CRUDView:
                 fields = field_names
             else:
                 # Fallback to '__all__' if no fields found
-                fields = '__all__'
+                fields = "__all__"
 
-        return modelform_factory(
-            self.model,
-            fields=fields,
-            exclude=self.exclude
-        )
+        return modelform_factory(self.model, fields=fields, exclude=self.exclude)
 
     def get_template_name(self, base_template, request):
         """Get template name with HTMX support."""
-        if request.headers.get('HX-Request'):
+        if request.headers.get("HX-Request"):
             # Return partial template for HTMX requests
-            return base_template.replace('.html', f'{self.htmx_template_suffix}.html')
+            return base_template.replace(".html", f"{self.htmx_template_suffix}.html")
         return base_template
 
     def get_success_url(self, obj=None):
         """Get URL to redirect to after successful form submission."""
-        return reverse(f'{self.get_url_namespace()}_list')
+        return reverse(f"{self.get_url_namespace()}_list")
 
     def get_url_namespace(self):
         """Get URL namespace for this CRUD."""
@@ -195,23 +197,27 @@ class CRUDListView(ListView):
         return self.crud_view.get_queryset(self.request)
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.list_template, self.request)]
+        return [
+            self.crud_view.get_template_name(self.crud_view.list_template, self.request)
+        ]
 
     def get_paginate_by(self, queryset):
         return self.crud_view.paginate_by
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'crud_view': self.crud_view,
-            'model_name': self.crud_view.model._meta.verbose_name,
-            'model_name_plural': self.crud_view.model._meta.verbose_name_plural,
-            'search_query': self.request.GET.get('q', ''),
-            'list_display': self.crud_view.list_display,
-            'list_display_links': self.crud_view.list_display_links,
-            'has_add_permission': True,  # Add permission checking here
-            'url_namespace': self.crud_view.get_url_namespace(),
-        })
+        context.update(
+            {
+                "crud_view": self.crud_view,
+                "model_name": self.crud_view.model._meta.verbose_name,
+                "model_name_plural": self.crud_view.model._meta.verbose_name_plural,
+                "search_query": self.request.GET.get("q", ""),
+                "list_display": self.crud_view.list_display,
+                "list_display_links": self.crud_view.list_display_links,
+                "has_add_permission": True,  # Add permission checking here
+                "url_namespace": self.crud_view.get_url_namespace(),
+            }
+        )
         return context
 
 
@@ -228,7 +234,9 @@ class CRUDCreateView(CreateView):
         return self.crud_view.get_form_class()
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.form_template, self.request)]
+        return [
+            self.crud_view.get_template_name(self.crud_view.form_template, self.request)
+        ]
 
     def get_success_url(self):
         return self.crud_view.get_success_url(self.object)
@@ -236,25 +244,26 @@ class CRUDCreateView(CreateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         msg = self.crud_view.format_message(
-            self.crud_view.success_message_create,
-            self.object
+            self.crud_view.success_message_create, self.object
         )
         messages.success(self.request, msg)
 
         # For HTMX requests, return a redirect trigger
-        if self.request.headers.get('HX-Request'):
-            response['HX-Redirect'] = self.get_success_url()
+        if self.request.headers.get("HX-Request"):
+            response["HX-Redirect"] = self.get_success_url()
 
         return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'crud_view': self.crud_view,
-            'model_name': self.crud_view.model._meta.verbose_name,
-            'action': 'Create',
-            'url_namespace': self.crud_view.get_url_namespace(),
-        })
+        context.update(
+            {
+                "crud_view": self.crud_view,
+                "model_name": self.crud_view.model._meta.verbose_name,
+                "action": "Create",
+                "url_namespace": self.crud_view.get_url_namespace(),
+            }
+        )
         return context
 
 
@@ -274,7 +283,9 @@ class CRUDUpdateView(UpdateView):
         return self.crud_view.get_form_class()
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.form_template, self.request)]
+        return [
+            self.crud_view.get_template_name(self.crud_view.form_template, self.request)
+        ]
 
     def get_success_url(self):
         return self.crud_view.get_success_url(self.object)
@@ -282,24 +293,25 @@ class CRUDUpdateView(UpdateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         msg = self.crud_view.format_message(
-            self.crud_view.success_message_update,
-            self.object
+            self.crud_view.success_message_update, self.object
         )
         messages.success(self.request, msg)
 
-        if self.request.headers.get('HX-Request'):
-            response['HX-Redirect'] = self.get_success_url()
+        if self.request.headers.get("HX-Request"):
+            response["HX-Redirect"] = self.get_success_url()
 
         return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'crud_view': self.crud_view,
-            'model_name': self.crud_view.model._meta.verbose_name,
-            'action': 'Update',
-            'url_namespace': self.crud_view.get_url_namespace(),
-        })
+        context.update(
+            {
+                "crud_view": self.crud_view,
+                "model_name": self.crud_view.model._meta.verbose_name,
+                "action": "Update",
+                "url_namespace": self.crud_view.get_url_namespace(),
+            }
+        )
         return context
 
 
@@ -316,20 +328,21 @@ class CRUDDeleteView(DeleteView):
         return self.crud_view.model.objects.all()
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.delete_template, self.request)]
+        return [
+            self.crud_view.get_template_name(
+                self.crud_view.delete_template, self.request
+            )
+        ]
 
     def get_success_url(self):
         return self.crud_view.get_success_url()
 
     def form_valid(self, form):
         obj = self.get_object()
-        msg = self.crud_view.format_message(
-            self.crud_view.success_message_delete,
-            obj
-        )
+        msg = self.crud_view.format_message(self.crud_view.success_message_delete, obj)
         response = super().form_valid(form)
 
-        if self.request.headers.get('HX-Request'):
+        if self.request.headers.get("HX-Request"):
             # For HTMX requests, return the updated list content instead of redirecting
             # This ensures the UI updates immediately and the success message is shown
             from django.template.loader import render_to_string
@@ -342,39 +355,41 @@ class CRUDDeleteView(DeleteView):
 
             # Render the list content with messages
             context = {
-                'object_list': queryset,
-                'crud_view': self.crud_view,
-                'model_name': self.crud_view.model._meta.verbose_name,
-                'model_name_plural': self.crud_view.model._meta.verbose_name_plural,
-                'search_query': self.request.GET.get('q', ''),
-                'list_display': self.crud_view.list_display,
-                'list_display_links': self.crud_view.list_display_links,
-                'has_add_permission': True,
-                'url_namespace': self.crud_view.get_url_namespace(),
-                'messages': list(messages.get_messages(self.request)),
+                "object_list": queryset,
+                "crud_view": self.crud_view,
+                "model_name": self.crud_view.model._meta.verbose_name,
+                "model_name_plural": self.crud_view.model._meta.verbose_name_plural,
+                "search_query": self.request.GET.get("q", ""),
+                "list_display": self.crud_view.list_display,
+                "list_display_links": self.crud_view.list_display_links,
+                "has_add_permission": True,
+                "url_namespace": self.crud_view.get_url_namespace(),
+                "messages": list(messages.get_messages(self.request)),
             }
 
             # Check if pagination is needed
             paginate_by = self.crud_view.paginate_by
             if paginate_by:
                 paginator = Paginator(queryset, paginate_by)
-                page_number = self.request.GET.get('page', 1)
+                page_number = self.request.GET.get("page", 1)
                 page_obj = paginator.get_page(page_number)
-                context.update({
-                    'page_obj': page_obj,
-                    'paginator': paginator,
-                    'is_paginated': True,
-                })
+                context.update(
+                    {
+                        "page_obj": page_obj,
+                        "paginator": paginator,
+                        "is_paginated": True,
+                    }
+                )
             else:
-                context['is_paginated'] = False
+                context["is_paginated"] = False
 
             # Render the list content
-            html = render_to_string('django_umin/list_htmx.html', context, self.request)
+            html = render_to_string("django_umin/list_htmx.html", context, self.request)
 
             # Return the HTML content with HX-Trigger for messages
             response = HttpResponse(html)
-            response['HX-Trigger'] = 'showMessage'
-            response['HX-Trigger-After-Swap'] = 'showMessage'
+            response["HX-Trigger"] = "showMessage"
+            response["HX-Trigger-After-Swap"] = "showMessage"
 
             return response
 
@@ -382,22 +397,25 @@ class CRUDDeleteView(DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'crud_view': self.crud_view,
-            'model_name': self.crud_view.model._meta.verbose_name,
-            'url_namespace': self.crud_view.get_url_namespace(),
-        })
+        context.update(
+            {
+                "crud_view": self.crud_view,
+                "model_name": self.crud_view.model._meta.verbose_name,
+                "url_namespace": self.crud_view.get_url_namespace(),
+            }
+        )
         return context
 
 
 class CRUDIndexView(ListView):
     """Index view showing all registered CRUD models similar to Django admin."""
 
-    template_name = 'django_umin/index.html'
+    template_name = "django_umin/index.html"
 
     def get_queryset(self):
         """Get all registered CRUD models."""
         from .urls import registry
+
         return list(registry._registry.values())
 
     def get_context_data(self, **kwargs):
@@ -416,19 +434,23 @@ class CRUDIndexView(ListView):
             if app_label not in app_models:
                 app_models[app_label] = []
 
-            app_models[app_label].append({
-                'name': model._meta.verbose_name_plural,
-                'model_name': model._meta.model_name,
-                'app_label': app_label,
-                'list_url': f'/{model._meta.model_name}/',  # Will be overridden by template
-                'add_url': f'/{model._meta.model_name}/create/',  # Will be overridden by template
-                'verbose_name': model._meta.verbose_name,
-                'list_url_name': f'{model._meta.model_name}_list',
-                'add_url_name': f'{model._meta.model_name}_create',
-            })
+            app_models[app_label].append(
+                {
+                    "name": model._meta.verbose_name_plural,
+                    "model_name": model._meta.model_name,
+                    "app_label": app_label,
+                    "list_url": f"/{model._meta.model_name}/",  # Will be overridden by template
+                    "add_url": f"/{model._meta.model_name}/create/",  # Will be overridden by template
+                    "verbose_name": model._meta.verbose_name,
+                    "list_url_name": f"{model._meta.model_name}_list",
+                    "add_url_name": f"{model._meta.model_name}_create",
+                }
+            )
 
-        context.update({
-            'app_models': app_models,
-            'total_models': len(crud_views),
-        })
+        context.update(
+            {
+                "app_models": app_models,
+                "total_models": len(crud_views),
+            }
+        )
         return context
