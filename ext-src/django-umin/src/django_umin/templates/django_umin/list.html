@@ -27,12 +27,13 @@
         </div>
     </div>
 
+    {% if crud_view.search_fields or crud_view.list_filter %}
     <!-- Search and Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="p-4">
             <form hx-get="{% crud_url url_namespace 'list' %}"
                   hx-target="#results-table"
-                  hx-trigger="submit, input delay:500ms from:find input[name='q']"
+                  {% if crud_view.search_fields %}hx-trigger="submit, input delay:500ms from:find input[name='q']"{% endif %}
                   hx-indicator="#search-indicator"
                   class="space-y-4">
 
@@ -91,6 +92,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
     <!-- Results Table -->
     <div id="results-table" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
