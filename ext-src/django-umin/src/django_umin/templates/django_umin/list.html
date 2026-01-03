@@ -49,6 +49,8 @@
                            name="q"
                            value="{{ search_query }}"
                            placeholder="Search {{ model_name_plural }}..."
+                           hx-on="htmx:afterRequest: target.classList.add('search-active')"
+                           hx-on="htmx:afterSettle: target.classList.remove('search-active')"
                            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <div id="search-indicator" class="absolute inset-y-0 right-0 pr-3 flex items-center">
                         <svg class="htmx-indicator animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -94,8 +96,23 @@
     </div>
     {% endif %}
 
+    <!-- Search Status -->
+    {% if search_query %}
+    <div class="mb-4 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+            <span class="font-medium">{{ object_list|length }}</span>
+            result{{ object_list|length|pluralize }} found for
+            <span class="font-medium text-indigo-600">"{{ search_query }}"</span>
+        </div>
+        <a href="{% crud_url url_namespace 'list' %}"
+           class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors">
+            Clear search
+        </a>
+    </div>
+    {% endif %}
+
     <!-- Results Table -->
-    <div id="results-table" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div id="results-table" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden htmx-target">
         {% include "django_umin/list_htmx.html" %}
     </div>
 </div>
@@ -114,9 +131,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (mainMessages) {
                     // Clear existing messages first
                     mainMessages.innerHTML = htmxMessages.innerHTML;
-                    // Remove the HTMX messages from the swapped content
+                    // Remove HTMX messages from the swapped content
                     htmxMessages.remove();
                 }
+            }
+
+            // Add highlight animation to table rows
+            const rows = evt.detail.target.querySelectorAll('tbody tr');
+            rows.forEach((row, index) => {
+                setTimeout(() => {
+                    row.classList.add('htmx-updated-row');
+                    setTimeout(() => {
+                        row.classList.remove('htmx-updated-row');
+                    }, 1500);
+                }, index * 50);
+            });
+        }
+    });
+
+    // Clear search input highlight when search is cleared
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.target.id === 'results-table') {
+            const searchInput = document.querySelector('input[name="q"]');
+            if (searchInput) {
+                searchInput.classList.remove('search-active');
             }
         }
     });

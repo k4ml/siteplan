@@ -61,7 +61,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             {% for obj in object_list %}
-            <tr class="hover:bg-gray-50 transition-colors">
+            <tr class="hover:bg-gray-50 transition-colors htmx-updated-row">
                 {% for field in list_display %}
                 <td class="px-6 py-4 text-sm table-cell-wrap {% if field in list_display_links %}font-medium text-indigo-600{% else %}text-gray-900{% endif %}">
                     {% if field in list_display_links %}
