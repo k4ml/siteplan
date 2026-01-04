@@ -1,3 +1,4 @@
+{% load django_umin_vite %}
 <!-- templates/crud/base.html -->
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +8,7 @@
     <title>{% block title %}CRUD{% endblock %}</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% vite_asset 'css/app.css' app='django_umin' %}
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
