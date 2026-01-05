@@ -79,10 +79,14 @@ class Command(BaseCommand):
         return f"""
 import {{ defineConfig }} from 'vite';
 import {{ resolve, join }} from 'path';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({{
   base: '/static/',
   root: resolve('{rel_source_dir}'),
+  plugins: [
+    tailwindcss(),
+  ],
   build: {{
     manifest: 'manifest.json',
     outDir: resolve('{rel_out_dir}'),
