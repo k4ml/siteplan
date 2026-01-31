@@ -8,17 +8,18 @@ register = template.Library()
 def get_attribute(obj, attr):
     """Get attribute from object."""
     if obj is None:
-        return ''
+        return ""
 
-    if attr == '__str__':
+    if attr == "__str__":
         return str(obj)
 
     # Use Python's built-in getattr function directly
     import builtins
+
     try:
         return builtins.getattr(obj, attr)
     except (AttributeError, TypeError):
-        return ''
+        return ""
 
 
 @register.filter
@@ -30,7 +31,7 @@ def add(value, arg):
         try:
             return str(value) + str(arg)
         except (ValueError, TypeError):
-            return ''
+            return ""
 
 
 @register.simple_tag
@@ -38,31 +39,31 @@ def crud_url(url_namespace, action, pk=None):
     """Generate CRUD URL."""
     from django.urls import reverse
 
-    url_name = f'{url_namespace}_{action}'
+    url_name = f"{url_namespace}_{action}"
 
     # Use reverse with current_app=None to avoid namespace issues
     if pk:
-        return reverse(url_name, kwargs={'pk': pk}, current_app=None)
+        return reverse(url_name, kwargs={"pk": pk}, current_app=None)
 
     return reverse(url_name, current_app=None)
 
 
-@register.inclusion_tag('crud/components/field.html')
-def render_field(field, field_classes=''):
+@register.inclusion_tag("crud/components/field.html")
+def render_field(field, field_classes=""):
     """Render a form field with proper styling."""
     return {
-        'field': field,
-        'field_classes': field_classes,
+        "field": field,
+        "field_classes": field_classes,
     }
 
 
-@register.inclusion_tag('crud/components/table_header.html')
-def render_table_header(field, sortable=False, current_sort=''):
+@register.inclusion_tag("crud/components/table_header.html")
+def render_table_header(field, sortable=False, current_sort=""):
     """Render a table header with optional sorting."""
     return {
-        'field': field,
-        'sortable': sortable,
-        'current_sort': current_sort,
+        "field": field,
+        "sortable": sortable,
+        "current_sort": current_sort,
     }
 
 
@@ -81,14 +82,14 @@ def verbose_name_plural(model):
 @register.simple_tag
 def get_field_display(obj, field):
     """Get display value for a field, handling special cases."""
-    if field == '__str__':
+    if field == "__str__":
         return str(obj)
 
     try:
         value = getattr(obj, field)
 
         # Check for get_FOO_display method (for choices)
-        display_method = f'get_{field}_display'
+        display_method = f"get_{field}_display"
         if hasattr(obj, display_method):
             return getattr(obj, display_method)()
 
@@ -98,15 +99,15 @@ def get_field_display(obj, field):
 
         # Handle None
         if value is None:
-            return '-'
+            return "-"
 
         # Handle boolean
         if isinstance(value, bool):
-            return '✓' if value else '✗'
+            return "✓" if value else "✗"
 
         return value
     except (AttributeError, TypeError):
-        return '-'
+        return "-"
 
 
 @register.filter
@@ -118,25 +119,28 @@ def field_type(field):
 @register.filter
 def is_checkbox(field):
     """Check if field is a checkbox."""
-    return field.field.widget.__class__.__name__ in ['CheckboxInput', 'CheckboxSelectMultiple']
+    return field.field.widget.__class__.__name__ in [
+        "CheckboxInput",
+        "CheckboxSelectMultiple",
+    ]
 
 
 @register.filter
 def is_select(field):
     """Check if field is a select."""
-    return field.field.widget.__class__.__name__ in ['Select', 'SelectMultiple']
+    return field.field.widget.__class__.__name__ in ["Select", "SelectMultiple"]
 
 
 @register.filter
 def is_textarea(field):
     """Check if field is a textarea."""
-    return field.field.widget.__class__.__name__ == 'Textarea'
+    return field.field.widget.__class__.__name__ == "Textarea"
 
 
 @register.filter
 def is_file(field):
     """Check if field is a file input."""
-    return field.field.widget.__class__.__name__ in ['FileInput', 'ClearableFileInput']
+    return field.field.widget.__class__.__name__ in ["FileInput", "ClearableFileInput"]
 
 
 @register.filter
@@ -152,4 +156,4 @@ def is_date(field):
         except AttributeError:
             return False
 
-    return widget.__class__.__name__ == 'DateInput'
+    return widget.__class__.__name__ == "DateInput"
