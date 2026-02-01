@@ -1,6 +1,12 @@
 # crud/urls.py
 from django.urls import path
-from .views import CRUDListView, CRUDCreateView, CRUDUpdateView, CRUDDeleteView, CRUDIndexView
+from .views import (
+    CRUDListView,
+    CRUDCreateView,
+    CRUDUpdateView,
+    CRUDDeleteView,
+    CRUDIndexView,
+)
 
 
 class CRUDRegistry:
@@ -29,7 +35,7 @@ class CRUDRegistry:
     def get_urls(self):
         """Generate URL patterns for all registered CRUD views including index."""
         urlpatterns = [
-            path('', CRUDIndexView.as_view(), name='crud_index'),
+            path("", CRUDIndexView.as_view(), name="crud_index"),
         ]
 
         for model_name, crud_view in self._registry.items():
@@ -44,24 +50,24 @@ class CRUDRegistry:
 
         return [
             path(
-                f'{model_name}/',
+                f"{model_name}/",
                 CRUDListView.as_view(crud_view=crud_view),
-                name=f'{model_name}_list'
+                name=f"{model_name}_list",
             ),
             path(
-                f'{model_name}/create/',
+                f"{model_name}/create/",
                 CRUDCreateView.as_view(crud_view=crud_view),
-                name=f'{model_name}_create'
+                name=f"{model_name}_create",
             ),
             path(
-                f'{model_name}/<int:pk>/',
+                f"{model_name}/<int:pk>/",
                 CRUDUpdateView.as_view(crud_view=crud_view),
-                name=f'{model_name}_update'
+                name=f"{model_name}_update",
             ),
             path(
-                f'{model_name}/<int:pk>/delete/',
+                f"{model_name}/<int:pk>/delete/",
                 CRUDDeleteView.as_view(crud_view=crud_view),
-                name=f'{model_name}_delete'
+                name=f"{model_name}_delete",
             ),
         ]
 
@@ -77,16 +83,14 @@ registry = CRUDRegistry()
 def get_crud_urls():
     """Get all CRUD URLs including the index view."""
     urlpatterns = [
-        path('', CRUDIndexView.as_view(), name='crud_index'),
+        path("", CRUDIndexView.as_view(), name="crud_index"),
     ]
     urlpatterns.extend(registry.get_urls())
     return urlpatterns
 
 
-
-
 # Alternative: Manual URL generation helper
-def crud_urls(crud_view_class, prefix=''):
+def crud_urls(crud_view_class, prefix=""):
     """
     Generate URL patterns for a CRUD view.
 
@@ -104,23 +108,23 @@ def crud_urls(crud_view_class, prefix=''):
 
     return [
         path(
-            f'{prefix}{model_name}/',
+            f"{prefix}{model_name}/",
             CRUDListView.as_view(crud_view=crud_view),
-            name=f'{model_name}:list'
+            name=f"{model_name}:list",
         ),
         path(
-            f'{prefix}{model_name}/create/',
+            f"{prefix}{model_name}/create/",
             CRUDCreateView.as_view(crud_view=crud_view),
-            name=f'{model_name}:create'
+            name=f"{model_name}:create",
         ),
         path(
-            f'{prefix}{model_name}/<int:pk>/',
+            f"{prefix}{model_name}/<int:pk>/",
             CRUDUpdateView.as_view(crud_view=crud_view),
-            name=f'{model_name}:update'
+            name=f"{model_name}:update",
         ),
         path(
-            f'{prefix}{model_name}/<int:pk>/delete/',
+            f"{prefix}{model_name}/<int:pk>/delete/",
             CRUDDeleteView.as_view(crud_view=crud_view),
-            name=f'{model_name}:delete'
+            name=f"{model_name}:delete",
         ),
     ]

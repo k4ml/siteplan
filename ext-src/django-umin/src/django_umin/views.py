@@ -197,7 +197,9 @@ class CRUDListView(ListView):
         return self.crud_view.get_queryset(self.request)
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.list_template, self.request)]
+        return [
+            self.crud_view.get_template_name(self.crud_view.list_template, self.request)
+        ]
 
     def get_paginate_by(self, queryset):
         return self.crud_view.paginate_by
@@ -232,7 +234,9 @@ class CRUDCreateView(CreateView):
         return self.crud_view.get_form_class()
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.form_template, self.request)]
+        return [
+            self.crud_view.get_template_name(self.crud_view.form_template, self.request)
+        ]
 
     def get_success_url(self):
         return self.crud_view.get_success_url(self.object)
@@ -279,7 +283,9 @@ class CRUDUpdateView(UpdateView):
         return self.crud_view.get_form_class()
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.form_template, self.request)]
+        return [
+            self.crud_view.get_template_name(self.crud_view.form_template, self.request)
+        ]
 
     def get_success_url(self):
         return self.crud_view.get_success_url(self.object)
@@ -322,7 +328,11 @@ class CRUDDeleteView(DeleteView):
         return self.crud_view.model.objects.all()
 
     def get_template_names(self):
-        return [self.crud_view.get_template_name(self.crud_view.delete_template, self.request)]
+        return [
+            self.crud_view.get_template_name(
+                self.crud_view.delete_template, self.request
+            )
+        ]
 
     def get_success_url(self):
         return self.crud_view.get_success_url()
