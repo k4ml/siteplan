@@ -13,8 +13,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Starting Vite build process...")
 
-        installed_apps = [app.name for app in apps.get_app_configs()]
         project_root = str(settings.BASE_DIR)
+        node_modules_path = os.path.join(project_root, "node_modules")
+        if not os.path.isdir(node_modules_path):
+            self.stderr.write(
+                self.style.ERROR(
+                    "node_modules directory not found. Please run 'npm install'."
+                )
+            )
+            return
+
+        installed_apps = [app.name for app in apps.get_app_configs()]
+
 
         for app_name in installed_apps:
             try:

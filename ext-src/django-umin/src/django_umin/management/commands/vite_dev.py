@@ -11,6 +11,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         project_root = str(settings.BASE_DIR)
 
+        node_modules_path = os.path.join(project_root, "node_modules")
+        if not os.path.isdir(node_modules_path):
+            self.stderr.write(
+                self.style.ERROR(
+                    "node_modules directory not found. Please run 'npm install'."
+                )
+            )
+            return
+
         self.stdout.write("Starting a project-level Vite dev server...")
 
         vite_config_content = self.generate_vite_config(project_root)
