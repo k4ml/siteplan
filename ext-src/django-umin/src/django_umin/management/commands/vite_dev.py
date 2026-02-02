@@ -222,7 +222,7 @@ class Command(BaseCommand):
 
             hmr_config = f"""
     hmr: {{
-{chr(10).join(hmr_settings)}
+{("," + chr(10)).join(hmr_settings)}
     }},"""
 
         # Generate build input entries for asset discovery
