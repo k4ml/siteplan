@@ -33,10 +33,18 @@ def vite_asset(path, app):
         except LookupError:
             raise RuntimeError(f"Application '{app}' not found in INSTALLED_APPS.")
 
-        # Construct the asset path relative to the app's 'fe' directory
-        asset_url_path = path
+        # Construct the full path to the asset relative to project root
+        # Since Vite root is the project root, we need the full path from project root to the asset
+        project_root = str(settings.BASE_DIR)
+        app_fe_dir = os.path.join(app_config.path, "fe")
 
-        # The Vite dev server will serve the file from this path, with the base '/static/'
+        # Get the relative path from project root to the app's fe directory
+        rel_fe_dir = os.path.relpath(app_fe_dir, project_root).replace("\\", "/")
+
+        # Construct the asset path: fe_dir + asset_path
+        asset_url_path = f"{rel_fe_dir}/{path}"
+
+        # The Vite dev server has base='/static/', so URLs must start with /static/
         full_asset_url = f"{base_url}/static/{asset_url_path}"
 
         if full_asset_url.endswith(".js"):

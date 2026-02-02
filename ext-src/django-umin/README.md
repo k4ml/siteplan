@@ -370,6 +370,93 @@ Create a custom form template and use Django's form rendering:
 {% endfor %}
 ```
 
+## Vite Development
+
+Django UMIN includes built-in Vite integration for frontend development with hot module replacement (HMR).
+
+### Development Server
+
+Start the Vite dev server to watch all apps with frontend assets:
+
+```bash
+python manage.py vite_dev
+```
+
+This will automatically discover and watch all Django apps that have a `fe/` directory (e.g., `labzero/fe/`, `myapp/fe/`, etc.). Changes to CSS or JavaScript files in any app will trigger hot reloading.
+
+**Watch specific apps only:**
+
+```bash
+python manage.py vite_dev --app labzero --app myapp
+```
+
+The dev server will:
+- Watch all `fe/` directories in specified (or all) apps
+- Enable hot module replacement (HMR)
+- Serve assets at `http://localhost:5173`
+
+### Building for Production
+
+Build optimized assets for all apps:
+
+```bash
+python manage.py vite_build
+```
+
+This will:
+- Discover all apps with `fe/` directories
+- Build minified assets with Vite
+- Generate manifest files for production
+- Output to each app's `static/{app_name}/dist/` directory
+
+### Frontend Asset Structure
+
+Organize your frontend assets in each app:
+
+```
+myapp/
+├── fe/
+│   ├── css/
+│   │   └── app.css      # Main CSS file
+│   └── js/
+│       ├── main.js      # Main JS entry
+│       └── page/
+│           └── page.js  # Page-specific JS
+```
+
+### Using Assets in Templates
+
+Enable dev mode in settings:
+
+```python
+# settings.py
+DJANGO_UMIN_VITE_DEV_MODE = True  # Development
+DJANGO_UMIN_VITE_DEV_SERVER_HOST = "localhost"
+DJANGO_UMIN_VITE_DEV_SERVER_PORT = 5173
+```
+
+Load assets in templates:
+
+```html
+{% load django_umin_vite %}
+
+<!-- In development: loads from Vite dev server with HMR -->
+<!-- In production: loads from built assets with cache busting -->
+{% vite_asset "@vite/client" "" %}
+{% vite_asset "css/app.css" "myapp" %}
+{% vite_asset "js/main.js" "myapp" %}
+```
+
+### Multi-App Development
+
+The Vite dev server watches **all apps** with `fe/` directories simultaneously. This means:
+
+- Changes in `labzero/fe/` trigger HMR
+- Changes in `myapp/fe/` trigger HMR
+- Changes in any other app's `fe/` directory trigger HMR
+
+No need to restart the dev server when switching between apps!
+
 ## Performance Tips
 
 1. **Use select_related/prefetch_related** in `get_queryset()`
