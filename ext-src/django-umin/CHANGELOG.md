@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **--keep-vite-config option**: Added `--keep-vite-config` flag to `vite_dev` command to preserve the temporary Vite configuration file after the server stops. Useful for debugging and inspecting the generated configuration. Defaults to `False` (deletes the config file).
+
 ### Fixed
 - **vite_dev command now watches all apps**: The `vite_dev` management command now watches all Django apps with `fe/` directories simultaneously, instead of being limited to a single app. This ensures that changes to frontend assets in any app (e.g., `labzero/fe/`, `myapp/fe/`) trigger hot module replacement (HMR).
 - **vite_asset template tag URLs in dev mode**: Fixed the `vite_asset` template tag to generate correct URLs for the multi-app Vite dev server. URLs now include the full path from project root to the asset file (e.g., `http://localhost:5173/static/ext-src/labzero/src/labzero/fe/css/app.css`).

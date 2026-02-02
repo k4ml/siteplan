@@ -20,9 +20,16 @@ class Command(BaseCommand):
             dest="app_names",
             help="Specific app(s) to watch. Can be used multiple times. If not specified, watches all apps with 'fe' directories.",
         )
+        parser.add_argument(
+            "--keep-vite-config",
+            action="store_true",
+            default=False,
+            help="Keep the temporary Vite config file after the server stops. Default is to delete it.",
+        )
 
     def handle(self, *args, **options):
         project_root = str(settings.BASE_DIR)
+        keep_config = options.get("keep_vite_config", False)
 
         node_modules_path = os.path.join(project_root, "node_modules")
         if not os.path.isdir(node_modules_path):
@@ -79,10 +86,17 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"An error occurred: {e}"))
         finally:
             if temp_config_file and os.path.exists(temp_config_file):
-                os.remove(temp_config_file)
-                self.stdout.write(
-                    f"Cleaned up temporary config file {temp_config_file}"
-                )
+                if keep_config:
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Vite config preserved at: {temp_config_file}"
+                        )
+                    )
+                else:
+                    os.remove(temp_config_file)
+                    self.stdout.write(
+                        f"Cleaned up temporary config file {temp_config_file}"
+                    )
 
     def discover_vite_apps(self, specified_app_names=None):
         """Discover all apps with 'fe' directories, or specific apps if provided."""

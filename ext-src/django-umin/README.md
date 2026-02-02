@@ -390,6 +390,14 @@ This will automatically discover and watch all Django apps that have a `fe/` dir
 python manage.py vite_dev --app labzero --app myapp
 ```
 
+**Keep the Vite config file for inspection:**
+
+```bash
+python manage.py vite_dev --keep-vite-config
+```
+
+By default, the temporary Vite configuration file is deleted when the server stops. Use `--keep-vite-config` to preserve it for debugging or inspection purposes.
+
 The dev server will:
 - Watch all `fe/` directories in specified (or all) apps
 - Enable hot module replacement (HMR)
