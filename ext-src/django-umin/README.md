@@ -455,6 +455,81 @@ Load assets in templates:
 {% vite_asset "js/main.js" "myapp" %}
 ```
 
+### Proxied Environments (GitHub Codespaces, etc.)
+
+When developing in environments like GitHub Codespaces where the Vite dev server runs behind a proxy, you need additional configuration to enable HMR and proper asset loading.
+
+#### Automatic Codespaces Detection
+
+Add this to your `settings.py`:
+
+```python
+import os
+
+DJANGO_UMIN_VITE_DEV_MODE = True
+
+# Automatically detect GitHub Codespaces
+CODESPACE_NAME = os.environ.get('CODESPACE_NAME')
+if CODESPACE_NAME:
+    # Full dev server URL for Codespaces
+    DJANGO_UMIN_VITE_DEV_SERVER_URL = f"https://{CODESPACE_NAME}-5173.app.github.dev"
+
+    # HMR configuration for WebSocket connection
+    DJANGO_UMIN_VITE_HMR_PROTOCOL = "wss"
+    DJANGO_UMIN_VITE_HMR_HOST = f"{CODESPACE_NAME}-5173.app.github.dev"
+    DJANGO_UMIN_VITE_HMR_PORT = 443
+    DJANGO_UMIN_VITE_HMR_CLIENT_PORT = 443
+else:
+    # Local development settings
+    DJANGO_UMIN_VITE_DEV_SERVER_HOST = "localhost"
+    DJANGO_UMIN_VITE_DEV_SERVER_PORT = 5173
+```
+
+#### Manual Proxy Configuration
+
+For other proxied environments:
+
+```python
+# Full base URL (overrides host/port/protocol)
+DJANGO_UMIN_VITE_DEV_SERVER_URL = "https://your-proxy-url.example.com"
+
+# Or use individual components
+DJANGO_UMIN_VITE_DEV_SERVER_PROTOCOL = "https"  # default: "http"
+DJANGO_UMIN_VITE_DEV_SERVER_HOST = "your-proxy-url.example.com"
+DJANGO_UMIN_VITE_DEV_SERVER_PORT = 443
+
+# HMR WebSocket configuration
+DJANGO_UMIN_VITE_HMR_PROTOCOL = "wss"  # or "https"
+DJANGO_UMIN_VITE_HMR_HOST = "your-proxy-url.example.com"
+DJANGO_UMIN_VITE_HMR_PORT = 443
+DJANGO_UMIN_VITE_HMR_CLIENT_PORT = 443
+```
+
+#### Configuration Priority
+
+The settings are evaluated in this order:
+
+1. **`DJANGO_UMIN_VITE_DEV_SERVER_URL`** - If set, this full URL is used for all asset requests
+2. **`DJANGO_UMIN_VITE_DEV_SERVER_PROTOCOL` + HOST + PORT** - Otherwise, these are combined to form the URL
+3. **Default** - Falls back to `http://localhost:5173`
+
+#### Starting Vite Dev Server in Codespaces
+
+When running in Codespaces or with tunnels:
+
+```bash
+# The vite_dev command automatically configures this
+python manage.py vite_dev
+```
+
+The command automatically:
+- Sets `host: '0.0.0.0'` in the Vite config, making the server accessible from proxies
+- Configures CORS with `origin: '*'` to accept requests from any hostname
+- Sets permissive `Access-Control-Allow-Origin` headers
+- This prevents "Blocked request" errors when accessing through Cloudflare tunnels, ngrok, etc.
+
+**No additional Django configuration needed** - the Vite dev server is configured to accept requests from any origin in development mode.
+
 ### Multi-App Development
 
 The Vite dev server watches **all apps** with `fe/` directories simultaneously. This means:

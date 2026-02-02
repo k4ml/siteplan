@@ -12,6 +12,10 @@ VITE_DEV_SERVER_HOST = getattr(
     settings, "DJANGO_UMIN_VITE_DEV_SERVER_HOST", "localhost"
 )
 VITE_DEV_SERVER_PORT = getattr(settings, "DJANGO_UMIN_VITE_DEV_SERVER_PORT", 5173)
+VITE_DEV_SERVER_PROTOCOL = getattr(
+    settings, "DJANGO_UMIN_VITE_DEV_SERVER_PROTOCOL", "http"
+)
+VITE_DEV_SERVER_URL = getattr(settings, "DJANGO_UMIN_VITE_DEV_SERVER_URL", None)
 
 
 @register.simple_tag
@@ -22,7 +26,13 @@ def vite_asset(path, app):
     """
     if VITE_DEV_MODE:
         # In development, generate URLs to the project-level Vite dev server
-        base_url = f"http://{VITE_DEV_SERVER_HOST}:{VITE_DEV_SERVER_PORT}"
+        # Support proxied environments (e.g., GitHub Codespaces) by allowing full URL override
+        if VITE_DEV_SERVER_URL:
+            # Use explicit dev server URL (e.g., "https://codespace-5173.app.github.dev")
+            base_url = VITE_DEV_SERVER_URL.rstrip("/")
+        else:
+            # Construct from host, port, and protocol (default: http://localhost:5173)
+            base_url = f"{VITE_DEV_SERVER_PROTOCOL}://{VITE_DEV_SERVER_HOST}:{VITE_DEV_SERVER_PORT}"
 
         # The @vite/client script is a special case and is served from the root.
         if path == "@vite/client":

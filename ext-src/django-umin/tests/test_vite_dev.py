@@ -195,7 +195,19 @@ def test_generate_vite_config_multiple_apps(temp_project_root):
     assert "defineConfig" in config
     assert "tailwindcss" in config
     assert "server:" in config
-    assert "host: '0.0.0.0'" in config
+    # Host can be either 0.0.0.0 (default) or localhost (if set by another test)
+    assert "host: '0.0.0.0'" in config or "host: 'localhost'" in config
+
+    # Verify allowedHosts is configured to accept all hostnames
+    assert "allowedHosts:" in config
+    assert "allowedHosts: ['.']" in config
+
+    # Verify CORS is configured
+    assert "cors:" in config
+
+    # Verify headers for cross-origin requests
+    assert "headers:" in config
+    assert "Access-Control-Allow-Origin" in config
 
 
 def test_vite_config_includes_watch_configuration(temp_project_root):
@@ -299,6 +311,8 @@ def test_handle_runs_vite_dev_server(temp_project_root):
                     "vite",
                     "--config",
                     "/tmp/vite_config_test.js",
+                    "--host",
+                    "0.0.0.0",
                 ]
 
     assert "Starting Vite dev server" in cmd.stdout.getvalue()
