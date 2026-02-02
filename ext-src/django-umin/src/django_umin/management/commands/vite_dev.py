@@ -5,11 +5,28 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 
+from django.apps import apps
 class Command(BaseCommand):
-    help = "Runs a single Vite dev server for the entire project."
+    help = "Runs a single Vite dev server for a specific app."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "app_name",
+            type=str,
+            help="The name of the app to run the dev server for.",
+            default="labzero",
+            nargs="?",
+        )
 
     def handle(self, *args, **options):
         project_root = str(settings.BASE_DIR)
+        app_name = options["app_name"]
+
+        try:
+            app_config = apps.get_app_config(app_name)
+        except LookupError:
+            self.stderr.write(self.style.ERROR(f"App '{app_name}' not found."))
+            return
 
         node_modules_path = os.path.join(project_root, "node_modules")
         if not os.path.isdir(node_modules_path):
@@ -20,9 +37,11 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write("Starting a project-level Vite dev server...")
+        self.stdout.write(f"Starting Vite dev server for app '{app_name}'...")
 
-        vite_config_content = self.generate_vite_config(project_root)
+        vite_config_content = self.generate_vite_config(
+            project_root, app_config.path, app_name
+        )
 
         temp_config_file = None
         try:
@@ -54,29 +73,30 @@ class Command(BaseCommand):
                     f"Cleaned up temporary config file {temp_config_file}"
                 )
 
-    def generate_vite_config(self, project_root):
+    def generate_vite_config(self, project_root, app_path, app_name):
+        source_dir = os.path.join(app_path, "fe")
+        rel_source_dir = os.path.relpath(source_dir, project_root)
+
         return f"""
 import {{ defineConfig }} from 'vite';
 import {{ resolve }} from 'path';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({{
-  // Set the root to the Django project's base directory
-  root: resolve('{project_root}'),
+  // Set the root to the app's 'fe' directory
+  root: resolve('{rel_source_dir}'),
 
-  // The base URL for assets should still be /static/
+  // The base URL for assets
   base: '/static/',
+
+  plugins: [
+    tailwindcss(),
+  ],
 
   server: {{
     host: '0.0.0.0',
     port: {getattr(settings, "DJANGO_UMIN_VITE_DEV_SERVER_PORT", 5173)},
     // We don't need an entry point, as Django will request assets directly
   }},
-
-  build: {{
-    // This section is not used by the dev server, but it's good practice
-    // to have a placeholder.
-    outDir: resolve('{project_root}', 'dist-build'),
-    manifest: 'manifest.json',
-  }}
 }});
 """
