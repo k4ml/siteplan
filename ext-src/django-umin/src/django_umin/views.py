@@ -4,7 +4,7 @@ from django.contrib.admin.utils import flatten_fieldsets
 from django.forms import modelform_factory
 from django.urls import reverse
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
 
@@ -57,6 +57,11 @@ class CRUDView:
     success_message_create = "{object} was created successfully."
     success_message_update = "{object} was updated successfully."
     success_message_delete = "{object} was deleted successfully."
+
+    # Bulk actions
+    actions = None  # List of action functions/callables
+    actions_on_top = True
+    actions_on_bottom = False
 
     def __init__(self):
         if not self.model:
@@ -183,6 +188,17 @@ class CRUDView:
         """Format success message with object."""
         return template.format(object=str(obj))
 
+    def get_actions(self):
+        """Get list of available actions for this view."""
+        if self.actions is None:
+            # Default actions
+            from .actions import delete_selected
+            return [delete_selected]
+        elif self.actions == []:
+            # Explicitly disabled
+            return []
+        return self.actions
+
 
 class CRUDListView(ListView):
     """List view for CRUD operations."""
@@ -192,6 +208,42 @@ class CRUDListView(ListView):
     def __init__(self, crud_view, **kwargs):
         super().__init__(**kwargs)
         self.crud_view = crud_view
+
+    def post(self, request, *args, **kwargs):
+        """Handle bulk action submissions."""
+        action_name = request.POST.get("action")
+        selected_ids = request.POST.getlist("_selected_action")
+
+        if not action_name or not selected_ids:
+            messages.error(request, "No action or items selected.")
+            return redirect(reverse(f"{self.crud_view.get_url_namespace()}_list"))
+
+        # Get the queryset of selected objects
+        queryset = self.crud_view.model.objects.filter(pk__in=selected_ids)
+
+        # Find the action function
+        actions = self.crud_view.get_actions()
+        action_func = None
+        for action in actions:
+            if callable(action):
+                func_name = action.__name__ if hasattr(action, "__name__") else str(action)
+                if func_name == action_name:
+                    action_func = action
+                    break
+
+        if not action_func:
+            messages.error(request, f"Unknown action: {action_name}")
+            return redirect(reverse(f"{self.crud_view.get_url_namespace()}_list"))
+
+        # Execute the action
+        response = action_func(self.crud_view, request, queryset)
+
+        # If action returns a response (like CSV download), return it
+        if response is not None:
+            return response
+
+        # Otherwise redirect back to list view
+        return redirect(reverse(f"{self.crud_view.get_url_namespace()}_list"))
 
     def get_queryset(self):
         return self.crud_view.get_queryset(self.request)
@@ -206,6 +258,16 @@ class CRUDListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Get available actions
+        actions = self.crud_view.get_actions()
+        action_choices = []
+        for action in actions:
+            if callable(action):
+                func_name = action.__name__ if hasattr(action, "__name__") else str(action)
+                description = getattr(action, "short_description", func_name.replace("_", " ").title())
+                action_choices.append((func_name, description))
+        
         context.update(
             {
                 "crud_view": self.crud_view,
@@ -216,6 +278,9 @@ class CRUDListView(ListView):
                 "list_display_links": self.crud_view.list_display_links,
                 "has_add_permission": True,  # Add permission checking here
                 "url_namespace": self.crud_view.get_url_namespace(),
+                "actions": action_choices,
+                "actions_on_top": self.crud_view.actions_on_top,
+                "actions_on_bottom": self.crud_view.actions_on_bottom,
             }
         )
         return context
