@@ -146,7 +146,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({{
   base: '/static/',
-  root: resolve('{rel_source_dir}'),
+  root: resolve('.'),
   plugins: [
     tailwindcss(),
   ],
