@@ -255,6 +255,35 @@ The bulk actions interface includes:
 
 ## Screenshots
 
+![Initial list view](_images/01-list-view-initial.png)
+
+![One item selected](_images/02-one-item-selected.png)
+
+![Two items selected with action dropdown](_images/03-two-items-selected.png)
+
+![Delete action selected with confirmation prompt](_images/04-delete-action-selected.png)
+
+![Confirmation modal](_images/05-confirmation-modal.png)
+
+## Benefits Over Django Admin
+
+- Modern UI with Tailwind CSS
+- HTMX for smooth interactions
+- Alpine.js for reactive UI
+- Mobile-friendly design
+- Easy to customize templates
+- Lightweight and focused
+
+## Future Enhancements
+
+Potential improvements:
+- Permissions check per action
+- Action groups/categories
+- Async actions with progress bar
+- Bulk edit form
+- Action history/undo
+- More built-in actions (duplicate, archive, etc.)
+
 ## Next Steps
 
 - Explore more [Features](features.md)
