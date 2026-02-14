@@ -255,10 +255,6 @@ The bulk actions interface includes:
 
 ## Screenshots
 
-![Bulk Actions Interface](../screenshots/03-two-items-selected.png)
-
-![Confirmation Modal](../screenshots/05-confirmation-modal.png)
-
 ## Next Steps
 
 - Explore more [Features](features.md)
