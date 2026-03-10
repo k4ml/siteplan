@@ -153,6 +153,17 @@ class SmartDumper:
         label = _model_label(model)
         sig = (label, obj.pk)
 
+        # ── loop guard (check before any output) ─────────────────────────────
+        if sig in self._seen:
+            print(
+                prefix
+                + self._c(f"┌─ {model.__name__} ", BOLD, GREEN)
+                + self._c(f"(pk={obj.pk})", DIM)
+                + self._c(" ↩ already shown above", DIM)
+            )
+            return
+        self._seen.add(sig)
+
         print(
             prefix
             + self._c(f"┌─ {model.__name__} ", BOLD, GREEN)
@@ -180,12 +191,6 @@ class SmartDumper:
             print(prefix + self._c(f"│  └─ (max depth {self.max_depth} reached)", DIM))
             print(prefix + self._c("└─────────────────────────────────", DIM))
             return
-
-        if sig in self._seen:
-            print(prefix + self._c("│  └─ (already visited – loop guard)", DIM))
-            print(prefix + self._c("└─────────────────────────────────", DIM))
-            return
-        self._seen.add(sig)
 
         child_prefix = prefix + "│  "
         new_prefix = child_prefix + self.indent
