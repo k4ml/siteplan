@@ -269,7 +269,6 @@ class SmartDumper:
                     for child in qs[: self.limit]:
                         self._dump_instance(child, depth + 1, new_prefix)
 
-        self._seen.discard(sig)  # allow revisiting via different paths
         print(prefix + self._c("└─────────────────────────────────", DIM))
 
 
