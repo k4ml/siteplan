@@ -188,7 +188,8 @@ class SmartDumper:
 
         # ── relations ────────────────────────────────────────────────────────
         if depth >= self.max_depth:
-            print(prefix + self._c(f"│  └─ (max depth {self.max_depth} reached)", DIM))
+            if self.max_depth > 0:
+                print(prefix + self._c(f"│  └─ (max depth {self.max_depth} reached)", DIM))
             print(prefix + self._c("└─────────────────────────────────", DIM))
             return
 
@@ -300,7 +301,7 @@ class Command(BaseCommand):
             "-d",
             type=int,
             default=2,
-            help="Max depth to follow relations (default: 2)",
+            help="Max depth to follow relations (default: 2). Use 0 to show only the top-level object with no relation traversal.",
         )
         parser.add_argument(
             "--limit",
