@@ -30,15 +30,16 @@ from django.db import models
 
 
 # ── ANSI colours (gracefully degrade on Windows/pipes) ────────────────────────
-RESET   = "\033[0m"
-BOLD    = "\033[1m"
-DIM     = "\033[2m"
-CYAN    = "\033[36m"
-YELLOW  = "\033[33m"
-GREEN   = "\033[32m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+CYAN = "\033[36m"
+YELLOW = "\033[33m"
+GREEN = "\033[32m"
 MAGENTA = "\033[35m"
-RED     = "\033[31m"
-BLUE    = "\033[34m"
+RED = "\033[31m"
+BLUE = "\033[34m"
+
 
 def c(text, *codes):
     return "".join(codes) + str(text) + RESET
@@ -47,6 +48,7 @@ def c(text, *codes):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 MAX_STR_LEN = 120  # truncate long field values in display
+
 
 def _fmt_value(value):
     if value is None:
@@ -91,25 +93,34 @@ def _get_reverse_relations(model):
 def _concrete_fields(instance):
     """All concrete (non-relation) fields on an instance."""
     return [
-        f for f in instance._meta.get_fields()
-        if isinstance(f, models.Field)
-        and not f.is_relation
-        and not f.many_to_many
+        f
+        for f in instance._meta.get_fields()
+        if isinstance(f, models.Field) and not f.is_relation and not f.many_to_many
     ]
 
 
 # ── Core renderer ─────────────────────────────────────────────────────────────
 
+
 class SmartDumper:
-    def __init__(self, max_depth=2, show_reverse=True, show_m2m=True,
-                 indent_size=4, limit=50, no_color=False):
-        self.max_depth   = max_depth
+    def __init__(
+        self,
+        max_depth=2,
+        show_reverse=True,
+        show_m2m=True,
+        indent_size=4,
+        limit=50,
+        no_color=False,
+        struct_only=False,
+    ):
+        self.max_depth = max_depth
         self.show_reverse = show_reverse
-        self.show_m2m    = show_m2m
-        self.indent      = " " * indent_size
-        self.limit       = limit
-        self.no_color    = no_color
-        self._seen       = set()  # (model_label, pk) – loop guard
+        self.show_m2m = show_m2m
+        self.indent = " " * indent_size
+        self.limit = limit
+        self.no_color = no_color
+        self.struct_only = struct_only
+        self._seen = set()  # (model_label, pk) – loop guard
 
     def _c(self, text, *codes):
         return text if self.no_color else c(text, *codes)
@@ -127,33 +138,42 @@ class SmartDumper:
             return
         if count > self.limit:
             print(
-                prefix + self.indent
-                + self._c(f"⚠  Showing first {self.limit} of {count}. Use --limit to change.", DIM)
+                prefix
+                + self.indent
+                + self._c(
+                    f"⚠  Showing first {self.limit} of {count}. Use --limit to change.",
+                    DIM,
+                )
             )
         for obj in queryset[: self.limit]:
             self._dump_instance(obj, depth=0, prefix=prefix + self.indent)
 
     def _dump_instance(self, obj, depth, prefix):
-        model  = type(obj)
-        label  = _model_label(model)
-        sig    = (label, obj.pk)
+        model = type(obj)
+        label = _model_label(model)
+        sig = (label, obj.pk)
 
-        print(prefix + self._c(f"┌─ {model.__name__} ", BOLD, GREEN) + self._c(f"(pk={obj.pk})", DIM))
+        print(
+            prefix
+            + self._c(f"┌─ {model.__name__} ", BOLD, GREEN)
+            + self._c(f"(pk={obj.pk})", DIM)
+        )
 
         # ── concrete fields ──────────────────────────────────────────────────
-        fields = _concrete_fields(obj)
-        for i, field in enumerate(fields):
-            is_last = i == len(fields) - 1
-            connector = "└─" if (is_last and depth >= self.max_depth) else "├─"
-            raw = getattr(obj, field.attname, None)
-            display = _fmt_value(raw)
-            print(
-                prefix
-                + f"│  {connector} "
-                + self._c(field.name, YELLOW)
-                + " = "
-                + display
-            )
+        if not self.struct_only:
+            fields = _concrete_fields(obj)
+            for i, field in enumerate(fields):
+                is_last = i == len(fields) - 1
+                connector = "└─" if (is_last and depth >= self.max_depth) else "├─"
+                raw = getattr(obj, field.attname, None)
+                display = _fmt_value(raw)
+                print(
+                    prefix
+                    + f"│  {connector} "
+                    + self._c(field.name, YELLOW)
+                    + " = "
+                    + display
+                )
 
         # ── relations ────────────────────────────────────────────────────────
         if depth >= self.max_depth:
@@ -168,7 +188,7 @@ class SmartDumper:
         self._seen.add(sig)
 
         child_prefix = prefix + "│  "
-        new_prefix   = child_prefix + self.indent
+        new_prefix = child_prefix + self.indent
 
         # Forward FK / O2O
         for field in _get_forward_relations(model):
@@ -178,7 +198,12 @@ class SmartDumper:
                 related_obj = None
             rel_label = f"→ {field.name}"
             if related_obj is None:
-                print(child_prefix + self._c(rel_label, MAGENTA) + " = " + self._c("None", DIM))
+                print(
+                    child_prefix
+                    + self._c(rel_label, MAGENTA)
+                    + " = "
+                    + self._c("None", DIM)
+                )
             else:
                 print(child_prefix + self._c(rel_label, MAGENTA))
                 self._dump_instance(related_obj, depth + 1, new_prefix)
@@ -187,9 +212,8 @@ class SmartDumper:
             meta_fields = obj._meta.get_fields()
             for rel in meta_fields:
                 # Reverse FK
-                if (
-                    self.show_reverse
-                    and isinstance(rel, models.fields.related.ManyToOneRel)
+                if self.show_reverse and isinstance(
+                    rel, models.fields.related.ManyToOneRel
                 ):
                     accessor = rel.get_accessor_name()
                     try:
@@ -205,9 +229,8 @@ class SmartDumper:
                         self._dump_instance(child, depth + 1, new_prefix)
 
                 # Reverse O2O
-                elif (
-                    self.show_reverse
-                    and isinstance(rel, models.fields.related.OneToOneRel)
+                elif self.show_reverse and isinstance(
+                    rel, models.fields.related.OneToOneRel
                 ):
                     accessor = rel.get_accessor_name()
                     try:
@@ -221,12 +244,15 @@ class SmartDumper:
                         print(new_prefix + self._c("None", DIM))
 
                 # M2M
-                elif (
-                    self.show_m2m
-                    and isinstance(rel, (models.ManyToManyField, models.ManyToManyRel))
+                elif self.show_m2m and isinstance(
+                    rel, (models.ManyToManyField, models.ManyToManyRel)
                 ):
                     try:
-                        accessor = rel.name if hasattr(rel, 'name') else rel.get_accessor_name()
+                        accessor = (
+                            rel.name
+                            if hasattr(rel, "name")
+                            else rel.get_accessor_name()
+                        )
                         qs = getattr(obj, accessor).all()
                     except Exception:
                         continue
@@ -243,6 +269,7 @@ class SmartDumper:
 
 
 # ── Management command ────────────────────────────────────────────────────────
+
 
 class Command(BaseCommand):
     help = textwrap.dedent("""\
@@ -262,16 +289,18 @@ class Command(BaseCommand):
         parser.add_argument(
             "filters",
             nargs="*",
-            help='ORM filter expressions as key=value pairs, e.g. status=pending id=42',
+            help="ORM filter expressions as key=value pairs, e.g. status=pending id=42",
         )
         parser.add_argument(
-            "--depth", "-d",
+            "--depth",
+            "-d",
             type=int,
             default=2,
             help="Max depth to follow relations (default: 2)",
         )
         parser.add_argument(
-            "--limit", "-l",
+            "--limit",
+            "-l",
             type=int,
             default=50,
             help="Max records per queryset (default: 50)",
@@ -287,6 +316,12 @@ class Command(BaseCommand):
             action="store_true",
             default=False,
             help="Skip ManyToMany relations",
+        )
+        parser.add_argument(
+            "--struct-only",
+            action="store_true",
+            default=False,
+            help="Show only the relation structure (model names and relation types) without any field values",
         )
 
     def handle(self, *args, **options):
@@ -329,7 +364,11 @@ class Command(BaseCommand):
 
         # ── build queryset ─────────────────────────────────────────────────
         try:
-            qs = model.objects.filter(**filter_kwargs) if filter_kwargs else model.objects.all()
+            qs = (
+                model.objects.filter(**filter_kwargs)
+                if filter_kwargs
+                else model.objects.all()
+            )
         except Exception as e:
             raise CommandError(f"Error building queryset: {e}")
 
@@ -340,10 +379,15 @@ class Command(BaseCommand):
             show_m2m=not options["no_m2m"],
             no_color=options["no_color"],
             limit=options["limit"],
+            struct_only=options["struct_only"],
         )
 
         print()
         if filter_kwargs:
-            print(c(f"  Filters: {filter_kwargs}", DIM) if not options["no_color"] else f"  Filters: {filter_kwargs}")
+            print(
+                c(f"  Filters: {filter_kwargs}", DIM)
+                if not options["no_color"]
+                else f"  Filters: {filter_kwargs}"
+            )
         dumper.dump(qs)
         print()
