@@ -6,6 +6,9 @@ This is very opinionate Django project structure that we use at lalokalabs. It i
 - Use `uv` to manage dependencies.
 - Frontend assets integration with Vite (from `ext-src/django-umin`).
 - Use pytest for testing - prefer function based tests with fixtures instead of class.
+- Mailpit - Local mail testing server
+- Overmind - Process manager (runs multiple services)
+- Docker Compose - Dependent services (Postgres, Redis, Adminer)
 
 ## Quickstart
 
