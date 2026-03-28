@@ -7,6 +7,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.utils.text import capfirst
+from django.template.loader import render_to_string
+import json
 
 
 class CRUDView:
@@ -48,7 +51,9 @@ class CRUDView:
     delete_template = "django_umin/delete.html"
 
     # HTMX configuration
+    htmx_enabled = True
     htmx_template_suffix = "_htmx"
+    htmx_redirect_on_success = True
 
     # Permissions
     permission_required = None
@@ -178,6 +183,10 @@ class CRUDView:
 
     def get_success_url(self, obj=None):
         """Get URL to redirect to after successful form submission."""
+        return self.get_list_url()
+
+    def get_list_url(self):
+        """Get URL for the list page."""
         return reverse(f"{self.get_url_namespace()}_list")
 
     def get_url_namespace(self):
@@ -188,6 +197,91 @@ class CRUDView:
         """Format success message with object."""
         return template.format(object=str(obj))
 
+    def get_update_queryset(self, request):
+        """Get the queryset used by update views."""
+        return self.model.objects.all()
+
+    def get_delete_queryset(self, request):
+        """Get the queryset used by delete views."""
+        return self.model.objects.all()
+
+    def get_object(self, request, queryset=None, **kwargs):
+        """Get the object used by update/delete views."""
+        if queryset is None:
+            queryset = self.model.objects.all()
+
+        return get_object_or_404(queryset, pk=kwargs["pk"])
+
+    def get_form_title(self, action, obj=None):
+        """Get the form page title."""
+        return f"{action} {capfirst(self.model._meta.verbose_name)}"
+
+    def get_breadcrumb_url(self, action, obj=None):
+        """Get the breadcrumb URL shown above the form."""
+        return self.get_list_url()
+
+    def get_breadcrumb_label(self, action, obj=None):
+        """Get the breadcrumb label shown above the form."""
+        return capfirst(self.model._meta.verbose_name_plural)
+
+    def get_cancel_url(self, action, obj=None):
+        """Get the cancel URL shown in the form footer."""
+        return self.get_list_url()
+
+    def get_submit_label(self, action, obj=None):
+        """Get the submit button label shown in the form footer."""
+        return f"Save {capfirst(self.model._meta.verbose_name)}"
+
+    def get_form_context(self, request, action, obj=None):
+        """Get shared context for create/update forms."""
+        return {
+            "crud_view": self,
+            "model_name": self.model._meta.verbose_name,
+            "action": action,
+            "url_namespace": self.get_url_namespace(),
+            "form_title": self.get_form_title(action, obj=obj),
+            "breadcrumb_url": self.get_breadcrumb_url(action, obj=obj),
+            "breadcrumb_label": self.get_breadcrumb_label(action, obj=obj),
+            "cancel_url": self.get_cancel_url(action, obj=obj),
+            "submit_label": self.get_submit_label(action, obj=obj),
+            "htmx_enabled": self.htmx_enabled,
+        }
+
+    def build_notification_payload(self, level, message):
+        """Build notification payload for frontend listeners."""
+        return {
+            "type": level,
+            "message": message,
+        }
+
+    def get_htmx_success_response(self, request, obj, form, message, action):
+        """Return an HTMX response for successful form submissions."""
+        if self.htmx_redirect_on_success:
+            response = HttpResponse()
+            response["HX-Redirect"] = self.get_success_url(obj)
+        else:
+            context = self.get_form_context(request, action, obj=obj)
+            context.update(
+                {
+                    "form": self.get_form_class()(instance=obj),
+                    "object": obj,
+                }
+            )
+            html = render_to_string(
+                self.get_template_name(self.form_template, request),
+                context,
+                request,
+            )
+            response = HttpResponse(html)
+
+        response["HX-Trigger"] = json.dumps(
+            {
+                "labzero:notify": self.build_notification_payload(
+                    "success", message
+                )
+            }
+        )
+        return response
     def get_actions(self):
         """Get list of available actions for this view."""
         if self.actions is None:
@@ -315,20 +409,15 @@ class CRUDCreateView(CreateView):
 
         # For HTMX requests, return a redirect trigger
         if self.request.headers.get("HX-Request"):
-            response["HX-Redirect"] = self.get_success_url()
+            return self.crud_view.get_htmx_success_response(
+                self.request, self.object, form, msg, "Create"
+            )
 
         return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "crud_view": self.crud_view,
-                "model_name": self.crud_view.model._meta.verbose_name,
-                "action": "Create",
-                "url_namespace": self.crud_view.get_url_namespace(),
-            }
-        )
+        context.update(self.crud_view.get_form_context(self.request, "Create"))
         return context
 
 
@@ -342,7 +431,11 @@ class CRUDUpdateView(UpdateView):
         self.crud_view = crud_view
 
     def get_queryset(self):
-        return self.crud_view.model.objects.all()
+        return self.crud_view.get_update_queryset(self.request)
+
+    def get_object(self, queryset=None):
+        queryset = queryset or self.get_queryset()
+        return self.crud_view.get_object(self.request, queryset=queryset, **self.kwargs)
 
     def get_form_class(self):
         return self.crud_view.get_form_class()
@@ -363,19 +456,16 @@ class CRUDUpdateView(UpdateView):
         messages.success(self.request, msg)
 
         if self.request.headers.get("HX-Request"):
-            response["HX-Redirect"] = self.get_success_url()
+            return self.crud_view.get_htmx_success_response(
+                self.request, self.object, form, msg, "Update"
+            )
 
         return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(
-            {
-                "crud_view": self.crud_view,
-                "model_name": self.crud_view.model._meta.verbose_name,
-                "action": "Update",
-                "url_namespace": self.crud_view.get_url_namespace(),
-            }
+            self.crud_view.get_form_context(self.request, "Update", obj=self.object)
         )
         return context
 
@@ -390,7 +480,11 @@ class CRUDDeleteView(DeleteView):
         self.crud_view = crud_view
 
     def get_queryset(self):
-        return self.crud_view.model.objects.all()
+        return self.crud_view.get_delete_queryset(self.request)
+
+    def get_object(self, queryset=None):
+        queryset = queryset or self.get_queryset()
+        return self.crud_view.get_object(self.request, queryset=queryset, **self.kwargs)
 
     def get_template_names(self):
         return [
