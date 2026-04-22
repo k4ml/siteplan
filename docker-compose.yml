@@ -3,7 +3,7 @@ version: '3.7'
 services:
   db:
     image: postgres:15-alpine
-    container_name: myapp_db
+    container_name: siteplan_db
     command: >
       postgres
       -c log_statement=all
@@ -25,20 +25,20 @@ services:
 
   redis:
     image: redis:5.0.5
-    container_name: myapp_redis
+    container_name: siteplan_redis
     ports:
       - "6379:6379"
 
   adminer:
     image: adminer
-    container_name: myapp_adminer
+    container_name: siteplan_adminer
     command: ["php", "-S", "0.0.0.0:8081", "-t", "/var/www/html"]
     links:
       - "db:db"
     ports:
       - "8081:8081"
     environment:
-      DATABASE_URL: "postgres://myapp_dev:pgsql@db:5432/myapp_dev?sslmode=disable"
+      DATABASE_URL: "postgres://siteplan_dev:pgsql@db:5432/siteplan_dev?sslmode=disable"
     depends_on:
       db:
         condition: service_healthy

@@ -34,9 +34,9 @@ make run
 ```
 
 **IMPORTANT**
-Run `./rename.sh myapp yourappname` before running your first `make dev` as that will run initial django migrations and `AUTH_USER_MODEL` is set by default to `myapp_user.User`. You should change it to your own custom user models.
+Run `./rename.sh siteplan yourappname` before running your first `make dev` as that will run initial django migrations and `AUTH_USER_MODEL` is set by default to `siteplan_user.User`. You should change it to your own custom user models.
 
-Login to the dashboard at `/dashboard/` and using email `admin@myapp.co` and password `picard data`.
+Login to the dashboard at `/dashboard/` and using email `admin@siteplan.co` and password `picard data`.
 
 ## Notes on Github Codespaces
 Vite dev server run on different port than the django dev server and unless you set it to public, it need to be authenticated first. You will need to open the css or js file directly first so that github will authenticate it. After that it should work as expected.
@@ -50,4 +50,4 @@ Vite dev server run on different port than the django dev server and unless you 
 <img width="2463" height="1512" alt="Screenshot from 2025-12-06 11-16-59" src="https://github.com/user-attachments/assets/2110614c-0064-4d7e-81e7-669e7fb72edd" />
 
 ## Customize
-The default project name is `myapp` and is used throughout the codebase for db name, settings and file/directory name. Run the script `rename.sh` to change this to your preferred project name.
+The default project name is `siteplan` and is used throughout the codebase for db name, settings and file/directory name. Run the script `rename.sh` to change this to your preferred project name.

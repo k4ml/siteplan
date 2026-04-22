@@ -4,7 +4,7 @@
 import os
 from pathlib import Path
 
-from myapp import dj_database_url
+from siteplan import dj_database_url
 from labzero.settings import get_base_settings
 
 # Calculate BASE_DIR (3 levels up from this file)
@@ -23,18 +23,18 @@ for key, value in base_settings.items():
 # Use custom database configuration (override labzero's env.db() approach)
 DATABASES = {'default': dj_database_url.config(conn_max_age=600)}
 DATABASES["default"]["TEST"] = {
-    "NAME": "myapp_test",
-    "USER": "myapp_test",
+    "NAME": "siteplan_test",
+    "USER": "siteplan_test",
 }
 
 # Use project-specific user model
-AUTH_USER_MODEL = "myapp_user.User"
+AUTH_USER_MODEL = "siteplan_user.User"
 
 # Project-specific WSGI application
-WSGI_APPLICATION = "myapp.wsgi.application"
+WSGI_APPLICATION = "siteplan.wsgi.application"
 
 # Project-specific URL configuration
-ROOT_URLCONF = "myapp.urls"
+ROOT_URLCONF = "siteplan.urls"
 
 # Project-specific Wagtail site name
 WAGTAIL_SITE_NAME = "My App"
@@ -49,5 +49,5 @@ LOGIN_TEMPLATE = "labzero/login.html"
 # Use namespaced URLs for login/logout (since they're in labzero namespace)
 LOGIN_URL = "/app/login/"
 
-# Add myapp_user and myapp to INSTALLED_APPS (keep labzero for core functionality)
-INSTALLED_APPS = ["myapp_user", "myapp"] + INSTALLED_APPS
+# Add siteplan_user and siteplan to INSTALLED_APPS (keep labzero for core functionality)
+INSTALLED_APPS = ["siteplan_user", "siteplan"] + INSTALLED_APPS

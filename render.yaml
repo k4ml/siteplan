@@ -1,9 +1,9 @@
 services:
   # A Docker web service
   - type: web
-    name: myapp
+    name: siteplan
     env: docker
-    buildCommand: .venv/bin/myapp manage migrate --no-input
+    buildCommand: .venv/bin/siteplan manage migrate --no-input
     region: oregon # optional (defaults to oregon)
     plan: standard # optional (defaults to starter)
     branch: main # optional (defaults to master)
@@ -12,5 +12,5 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: myapp-db
+          name: siteplan-db
           property: connectionString

@@ -2,5 +2,5 @@
 
 set -euo pipefail
 
-/app/.venv/bin/myapp manage collectstatic --no-input
-/app/.venv/bin/myapp run-gunicorn -b 0.0.0.0:8000 --serve-static
+/app/.venv/bin/siteplan manage collectstatic --no-input
+/app/.venv/bin/siteplan run-gunicorn -b 0.0.0.0:8000 --serve-static

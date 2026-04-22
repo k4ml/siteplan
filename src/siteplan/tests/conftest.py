@@ -8,7 +8,7 @@ def hook(settings):
 
 
 pytest_plugins = configure_djangoapp_plugin(
-    settings="myapp.settings",
+    settings="siteplan.settings",
 )
 
 @pytest.fixture
