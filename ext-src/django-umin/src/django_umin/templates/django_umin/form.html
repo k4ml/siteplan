@@ -1,0 +1,8 @@
+<!-- templates/django_umin/form.html -->
+{% extends "django_umin/base.html" %}
+
+{% block title %}{{ action }} {{ model_name|title }}{% endblock %}
+
+{% block content %}
+{% include "django_umin/includes/form_page.html" %}
+{% endblock %}

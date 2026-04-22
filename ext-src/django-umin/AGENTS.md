@@ -1,0 +1,1 @@
+- Write proper tests in ./tests/ directory using pytest. Use function instead of class. Make use of pytest fixtures for test setup
