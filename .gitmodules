@@ -1,6 +1,3 @@
-[submodule "ext-src/django-umin"]
-	path = ext-src/django-umin
-	url = https://github.com/k4ml/django-umin.git
 [submodule "ext-src/labzero"]
 	path = ext-src/labzero
 	url = https://github.com/lalokalabs/labzero.git
