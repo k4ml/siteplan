@@ -1,4 +1,7 @@
-This is very opinionate Django project structure that we use at lalokalabs. It includes:-
+A CMS based on wagtail but also usable as foundation to build application in Django.
+
+## Project Structure
+It use very opinionate Django project structure. It includes:-
 
 - `src/` based layout to separate python code from non-python files at the project root, only
    `./src/` will be added to `PYTHONPATH` resulting in cleaner import, no accidentally any `.py`
@@ -13,9 +16,8 @@ This is very opinionate Django project structure that we use at lalokalabs. It i
 ## Quickstart
 
 ```
-git submodule update --init --recursive
 cp .env.example .env
-make up
+docker compose up
 ```
 
 Add to `.env` to automatically start vite dev server:-
@@ -29,12 +31,9 @@ Or run `uv run manage.py vite_build` to build it manually, such as for productio
 In separate terminal, run:-
 
 ```
-make dev
-make run
+uv run python scripts/setup_dev.py
+overmind s
 ```
-
-**IMPORTANT**
-Run `./rename.sh siteplan yourappname` before running your first `make dev` as that will run initial django migrations and `AUTH_USER_MODEL` is set by default to `siteplan_user.User`. You should change it to your own custom user models.
 
 Login to the dashboard at `/dashboard/` and using email `admin@siteplan.co` and password `picard data`.
 
@@ -48,6 +47,3 @@ Vite dev server run on different port than the django dev server and unless you 
 
 ### Login
 <img width="2463" height="1512" alt="Screenshot from 2025-12-06 11-16-59" src="https://github.com/user-attachments/assets/2110614c-0064-4d7e-81e7-669e7fb72edd" />
-
-## Customize
-The default project name is `siteplan` and is used throughout the codebase for db name, settings and file/directory name. Run the script `rename.sh` to change this to your preferred project name.
