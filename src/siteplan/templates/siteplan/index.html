@@ -1,0 +1,148 @@
+{% extends "siteplan/base.html" %}
+
+{% block 'content' %}
+<div class="bg-white text-gray-800 font-sans">
+  <!-- Header -->
+  <header class="bg-gray-800 text-white shadow-md">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="text-2xl font-bold">
+        <a href="/" class="hover:text-gray-300">SaaSCo</a>
+      </div>
+      <nav class="hidden md:flex space-x-6">
+        <a href="#features" class="hover:text-gray-300">Features</a>
+        <a href="#pricing" class="hover:text-gray-300">Pricing</a>
+        <a href="#testimonials" class="hover:text-gray-300">Testimonials</a>
+        <a href="#about" class="hover:text-gray-300">About</a>
+      </nav>
+      <div>
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+            Dashboard
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+            Login
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <section id="features" class="bg-white py-20">
+      <div class="container mx-auto px-6 text-center">
+        <h2 class="text-4xl font-bold mb-2 text-gray-800">Your Adventure Starts Here</h2>
+        <h3 class="text-2xl mb-8 text-gray-600">Discover a new way to manage your tasks and projects.</h3>
+        <a href="#" class="bg-green-500 text-white font-bold py-4 px-8 rounded-full hover:bg-green-600">Try for free</a>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="bg-gray-100 py-20">
+      <div class="container mx-auto px-6 text-center">
+        <h2 class="text-4xl font-bold mb-2 text-gray-800">Pricing Plans</h2>
+        <h3 class="text-2xl mb-8 text-gray-600">Choose the plan that's right for you.</h3>
+        <div class="flex flex-wrap justify-center">
+          <!-- Plan 1 -->
+          <div class="w-full md:w-1/2 lg:w-1/4 p-4">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+              <h4 class="text-xl font-bold mb-2">Basic</h4>
+              <p class="text-4xl font-bold mb-4">$10<span class="text-lg font-normal">/mo</span></p>
+              <ul class="text-gray-600 mb-6">
+                <li>1 Project</li>
+                <li>10GB Storage</li>
+                <li>Basic Support</li>
+              </ul>
+              <a href="#" class="bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600">Select Plan</a>
+            </div>
+          </div>
+          <!-- Plan 2 -->
+          <div class="w-full md:w-1/2 lg:w-1/4 p-4">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+              <h4 class="text-xl font-bold mb-2">Pro</h4>
+              <p class="text-4xl font-bold mb-4">$25<span class="text-lg font-normal">/mo</span></p>
+              <ul class="text-gray-600 mb-6">
+                <li>5 Projects</li>
+                <li>50GB Storage</li>
+                <li>Priority Support</li>
+              </ul>
+              <a href="#" class="bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600">Select Plan</a>
+            </div>
+          </div>
+          <!-- Plan 3 -->
+          <div class="w-full md:w-1/2 lg:w-1/4 p-4">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+              <h4 class="text-xl font-bold mb-2">Business</h4>
+              <p class="text-4xl font-bold mb-4">$50<span class="text-lg font-normal">/mo</span></p>
+              <ul class="text-gray-600 mb-6">
+                <li>Unlimited Projects</li>
+                <li>200GB Storage</li>
+                <li>24/7 Support</li>
+              </ul>
+              <a href="#" class="bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600">Select Plan</a>
+            </div>
+          </div>
+          <!-- Plan 4 -->
+          <div class="w-full md:w-1/2 lg:w-1/4 p-4">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+              <h4 class="text-xl font-bold mb-2">Enterprise</h4>
+              <p class="text-4xl font-bold mb-4">Contact Us</p>
+              <ul class="text-gray-600 mb-6">
+                <li>Unlimited Everything</li>
+                <li>Custom Integrations</li>
+                <li>Dedicated Support</li>
+              </ul>
+              <a href="#" class="bg-green-500 text-white font-bold py-2 px-4 rounded-full hover:bg-green-600">Contact Us</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="bg-white py-20">
+      <div class="container mx-auto px-6 text-center">
+        <h2 class="text-4xl font-bold mb-2 text-gray-800">What Our Customers Say</h2>
+        <h3 class="text-2xl mb-8 text-gray-600">We have a lot of happy customers.</h3>
+        <div class="flex flex-wrap justify-center">
+          <div class="w-full md:w-1/3 p-4">
+            <div class="bg-gray-100 rounded-lg shadow-lg p-6">
+              <p class="text-gray-600 mb-4">"This is the best service I have ever used. It's so easy to use and has saved me so much time."</p>
+              <p class="text-gray-800 font-bold">John Doe</p>
+              <p class="text-gray-600">CEO, Example Corp</p>
+            </div>
+          </div>
+          <div class="w-full md:w-1/3 p-4">
+            <div class="bg-gray-100 rounded-lg shadow-lg p-6">
+              <p class="text-gray-600 mb-4">"I love this product! It's so intuitive and has helped me a lot in my projects."</p>
+              <p class="text-gray-800 font-bold">Jane Smith</p>
+              <p class="text-gray-600">Freelancer</p>
+            </div>
+          </div>
+          <div class="w-full md:w-1/3 p-4">
+            <div class="bg-gray-100 rounded-lg shadow-lg p-6">
+              <p class="text-gray-600 mb-4">"A must-have for every team. It has improved our productivity by a lot."</p>
+              <p class="text-gray-800 font-bold">Sam Wilson</p>
+              <p class="text-gray-600">Project Manager, Tech Inc.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8">
+    <div class="container mx-auto px-6 text-center">
+      <div class="flex justify-center space-x-6 mb-4">
+        <a href="#" class="hover:text-gray-300">Contact</a>
+        <a href="#" class="hover:text-gray-300">About Us</a>
+        <a href="#" class="hover:text-gray-300">Terms & Conditions</a>
+      </div>
+      <p>&copy; 2025 SaaSCo. All rights reserved.</p>
+    </div>
+  </footer>
+
+</div>
+{% endblock %}

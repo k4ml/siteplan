@@ -1,18 +1,18 @@
-{# Minimal stub template that extends labzero base template #}
+{# Minimal stub template that extends siteplan base template #}
 {% extends "base.html" %}
 
 {% block 'content' %}
 {# Project-specific content can go here #}
 <div class="container mx-auto px-4 py-8 bg-red-200">
     <h1 class="text-3xl font-bold mb-4">Welcome to MyApp</h1>
-    <p class="text-lg mb-6">This is a project-specific index page extending labzero/base.html</p>
+    <p class="text-lg mb-6">This is a project-specific index page extending siteplan/base.html</p>
     
     {% if user.is_authenticated %}
-        <a href="{% url 'labzero:dashboard' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+        <a href="{% url 'dashboard' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
             Go to Dashboard
         </a>
     {% else %}
-        <a href="{% url 'labzero:login' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+        <a href="{% url 'login' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
             Login
         </a>
     {% endif %}

@@ -16,7 +16,6 @@ dependencies = [
     "django-extensions<5.0.0,>=3.2.3",
     "werkzeug<3.0.0,>=2.3.7",
     "psycopg2>=2.9.10",
-    "labzero",
     "django-umin",
 ]
 name = "siteplan"
@@ -37,10 +36,8 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 django-umin = { workspace = true, editable = true }
-labzero = { workspace = true, editable = true }
 
 [tool.uv.workspace]
 members = [
     "ext-src/django-umin",
-    "ext-src/labzero",
 ]

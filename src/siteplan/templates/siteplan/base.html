@@ -1,0 +1,14 @@
+{% load django_umin_vite %}
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% vite_asset "css/app.css" "siteplan" %}
+</head>
+<body class="font-sans">
+  {% block 'content' %}{% endblock %}
+  {% vite_asset "js/main.js" "siteplan" %}
+</body>
+</html>
