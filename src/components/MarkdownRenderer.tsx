@@ -165,6 +165,13 @@ function makeRange(
   startOffset: number,
   endOffset: number,
 ): Range | null {
+  // Spans are in source order. Source positions can have gaps between
+  // adjacent spans (markdown markers like `**`, leading whitespace, blank
+  // lines between paragraphs are not part of any rendered span). We snap:
+  //   start → the first span ending at-or-after startOffset
+  //   end   → the last span starting at-or-before endOffset
+  // This way a "select whole paragraph" or even "select whole section"
+  // selection still produces a valid range across the spans inside it.
   const spans = container.querySelectorAll<HTMLElement>(
     "span.mdr-text[data-src-start]",
   );
@@ -172,6 +179,7 @@ function makeRange(
   let startWithin = 0;
   let endNode: Text | null = null;
   let endWithin = 0;
+
   for (const span of spans) {
     const sStart = Number(span.getAttribute("data-src-start"));
     const sEnd = Number(span.getAttribute("data-src-end"));
@@ -179,15 +187,31 @@ function makeRange(
     const child = span.firstChild;
     if (!child || child.nodeType !== Node.TEXT_NODE) continue;
     const textLen = child.textContent?.length ?? 0;
-    if (startNode == null && startOffset >= sStart && startOffset <= sEnd) {
+
+    // First span whose end reaches startOffset → start anchor.
+    if (startNode == null && sEnd >= startOffset && sEnd > 0) {
+      // span overlaps the start; if startOffset is before sStart (in a gap),
+      // begin at the start of this span.
       startNode = child as Text;
-      startWithin = Math.min(textLen, Math.max(0, startOffset - sStart));
+      startWithin =
+        startOffset <= sStart
+          ? 0
+          : Math.min(textLen, startOffset - sStart);
     }
-    if (endOffset >= sStart && endOffset <= sEnd) {
+
+    // Last span whose start lies at or before endOffset → end anchor.
+    if (sStart <= endOffset) {
       endNode = child as Text;
-      endWithin = Math.min(textLen, Math.max(0, endOffset - sStart));
+      endWithin =
+        endOffset >= sEnd
+          ? textLen
+          : Math.min(textLen, Math.max(0, endOffset - sStart));
+    } else {
+      // We've passed the end offset; no need to keep walking.
+      break;
     }
   }
+
   if (!startNode || !endNode) return null;
   const range = document.createRange();
   try {
