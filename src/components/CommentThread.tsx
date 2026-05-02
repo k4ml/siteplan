@@ -29,7 +29,6 @@ export default function CommentThread({
   onDelete,
 }: Props) {
   const [draft, setDraft] = useState("");
-  const [author, setAuthor] = useState<Author>("Me");
   const [collapsed, setCollapsed] = useState(comment.status === "resolved");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,7 +49,7 @@ export default function CommentThread({
         ...c.messages,
         {
           id: nanoid(),
-          author,
+          author: "Me",
           text,
           createdAt: new Date().toISOString(),
         },
@@ -156,7 +155,6 @@ export default function CommentThread({
 
           <div className="px-3 pb-3">
             <div className="flex items-center gap-1.5 mb-1.5">
-              <AuthorToggle author={author} onChange={setAuthor} />
               <button
                 type="button"
                 onClick={(e) => {
@@ -187,7 +185,7 @@ export default function CommentThread({
               placeholder={
                 isResolved
                   ? "Add a follow-up note…"
-                  : `Reply as ${author}… (⌘↩ to send)`
+                  : "Reply… (⌘↩ to send)"
               }
               rows={2}
               className="w-full resize-y rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
@@ -249,41 +247,11 @@ function Avatar({ author }: { author: Author }) {
   }
   return (
     <div
-      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-[#D97757] text-white"
+      className="shrink-0 w-6 h-6 rounded-full border border-stone-300 bg-white flex items-center justify-center overflow-hidden"
       title="Claude"
     >
-      <ClaudeMark size={14} />
+      <ClaudeMark size={18} />
     </div>
   );
 }
 
-function AuthorToggle({
-  author,
-  onChange,
-}: {
-  author: Author;
-  onChange: (a: Author) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-md border border-stone-300 text-xs overflow-hidden">
-      {(["Me", "Claude"] as Author[]).map((a) => (
-        <button
-          key={a}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onChange(a);
-          }}
-          className={
-            "px-2 py-1 " +
-            (a === author
-              ? "bg-stone-900 text-white"
-              : "bg-white text-stone-600 hover:bg-stone-100")
-          }
-        >
-          {a}
-        </button>
-      ))}
-    </div>
-  );
-}

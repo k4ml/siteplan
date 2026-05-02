@@ -100,10 +100,10 @@ export default function Sidebar({
                     )}
                     {d.lastEditor === "claude" && (
                       <span
-                        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#D97757] text-white"
+                        className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-stone-300 bg-white overflow-hidden"
                         title="Last edited by Claude"
                       >
-                        <ClaudeMark size={10} />
+                        <ClaudeMark size={12} />
                       </span>
                     )}
                   </div>
