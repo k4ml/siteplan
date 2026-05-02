@@ -211,6 +211,7 @@ export default function CommentThread({
           }}
           className={
             "px-3 pt-2 text-xs italic cursor-pointer " +
+            (collapsed ? "pb-2 " : "") +
             (isOrphan ? "text-red-700" : "text-stone-500") +
             (isApplied ? " line-through opacity-70" : "")
           }
