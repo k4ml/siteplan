@@ -69,6 +69,8 @@ Commands:
   mdr push <file> [--slug NAME] [--if-unmodified-since ISO]
       Send a markdown file to the local reviewer app.
       Slug defaults to the filename without extension.
+      Use '-' as <file> to read from stdin (requires --slug):
+        echo "# Plan" | mdr push - --slug my-plan
 
   mdr pull <slug> [--out FILE]
       Fetch the doc + comment footer as markdown.
@@ -92,11 +94,22 @@ Environment:
   MDR_BASE  API base URL (default: http://127.0.0.1:5173)
 `;
 
+async function readStdin() {
+  const chunks = [];
+  for await (const c of process.stdin) chunks.push(c);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 async function cmdPush(args) {
   const file = args.positional[1];
-  if (!file) throw new Error("Usage: mdr push <file>");
+  if (!file) throw new Error("Usage: mdr push <file>  (or  mdr push - --slug NAME)");
+  const fromStdin = file === "-";
+  if (fromStdin && !args.flags.slug) {
+    throw new Error("mdr push - requires --slug NAME (no filename to derive from)");
+  }
   const slug = args.flags.slug ?? slugFromFilename(file);
-  const body = await readFile(file, "utf8");
+  const body = fromStdin ? await readStdin() : await readFile(file, "utf8");
+  if (!body.trim()) throw new Error("nothing to push (empty body)");
   const headers = { "Content-Type": "text/markdown" };
   if (args.flags["if-unmodified-since"]) {
     headers["If-Unmodified-Since"] = args.flags["if-unmodified-since"];
