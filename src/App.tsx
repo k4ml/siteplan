@@ -13,6 +13,7 @@ import {
   putDocMarkdown,
   subscribeDocEvents,
 } from "./lib/api-client";
+import { useIsDesktop } from "./lib/use-media-query";
 import type { Comment, DocSummary, FullDoc } from "./types";
 
 const ACTIVE_KEY = "mdr:activeSlug";
@@ -43,16 +44,30 @@ export default function App() {
       ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, stored))
       : SIDEBAR_DEFAULT;
   });
+  const isDesktop = useIsDesktop();
+  // On desktop, persist explicit sidebar visibility. On mobile we default
+  // to closed (drawer behaviour) and ignore the persisted desktop value.
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(
     () => localStorage.getItem(SIDEBAR_VISIBLE_KEY) !== "0",
   );
+  // When the viewport changes between mobile and desktop, default the
+  // drawer to closed on first transition into mobile so it doesn't cover
+  // the doc on small screens.
+  useEffect(() => {
+    if (!isDesktop) setSidebarVisible(false);
+  }, [isDesktop]);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
+  // Only persist visibility on desktop — on mobile the panel is a transient
+  // drawer and we don't want its open/close state to clobber the desktop
+  // user-preferred value.
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_VISIBLE_KEY, sidebarVisible ? "1" : "0");
-  }, [sidebarVisible]);
+    if (isDesktop) {
+      localStorage.setItem(SIDEBAR_VISIBLE_KEY, sidebarVisible ? "1" : "0");
+    }
+  }, [sidebarVisible, isDesktop]);
 
   const refreshDocs = useCallback(async () => {
     try {
@@ -187,29 +202,48 @@ export default function App() {
     [activeDoc, loadActive],
   );
 
+  // On mobile, selecting a doc or opening a modal should auto-close the
+  // drawer so the user lands on the content.
+  const handleSelectSlug = useCallback(
+    (slug: string) => {
+      setActiveSlug(slug);
+      if (!isDesktop) setSidebarVisible(false);
+    },
+    [isDesktop],
+  );
+
   return (
-    <div className="flex h-full text-sm">
-      {sidebarVisible && (
-        <>
-          <Sidebar
-            docs={docs}
-            activeSlug={activeSlug}
-            onSelect={setActiveSlug}
-            onNew={() => setModal({ kind: "paste", mode: "create" })}
-            onPasteReplace={() => setModal({ kind: "paste", mode: "replace" })}
-            onExport={() => setModal({ kind: "export" })}
-            onDelete={handleDeleteDoc}
-            width={sidebarWidth}
-          />
-          <Resizer
-            side="left"
-            width={sidebarWidth}
-            min={SIDEBAR_MIN}
-            max={SIDEBAR_MAX}
-            onResize={setSidebarWidth}
-            onReset={() => setSidebarWidth(SIDEBAR_DEFAULT)}
-          />
-        </>
+    <div className="flex h-full text-sm relative">
+      <Sidebar
+        docs={docs}
+        activeSlug={activeSlug}
+        onSelect={handleSelectSlug}
+        onNew={() => setModal({ kind: "paste", mode: "create" })}
+        onPasteReplace={() => setModal({ kind: "paste", mode: "replace" })}
+        onExport={() => setModal({ kind: "export" })}
+        onDelete={handleDeleteDoc}
+        width={sidebarWidth}
+        visible={sidebarVisible}
+        isDesktop={isDesktop}
+        onClose={() => setSidebarVisible(false)}
+      />
+      {isDesktop && sidebarVisible && (
+        <Resizer
+          side="left"
+          width={sidebarWidth}
+          min={SIDEBAR_MIN}
+          max={SIDEBAR_MAX}
+          onResize={setSidebarWidth}
+          onReset={() => setSidebarWidth(SIDEBAR_DEFAULT)}
+        />
+      )}
+      {!isDesktop && sidebarVisible && (
+        <button
+          type="button"
+          onClick={() => setSidebarVisible(false)}
+          className="fixed inset-0 z-30 bg-stone-900/40"
+          aria-label="Close sidebar"
+        />
       )}
       <main className="flex-1 min-w-0 flex">
         {activeDoc ? (

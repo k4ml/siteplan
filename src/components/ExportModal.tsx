@@ -29,12 +29,12 @@ export default function ExportModal({ doc, comments, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-stone-900/40 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-stone-900/40 flex md:items-center md:justify-center md:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+      <div className="bg-white shadow-xl w-full md:rounded-lg md:max-w-3xl h-full md:h-auto md:max-h-[85vh] flex flex-col">
         <div className="px-5 py-3 border-b border-stone-200 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-stone-900">Export with comments</h2>

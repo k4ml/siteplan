@@ -6,8 +6,9 @@ import CommentRail from "./CommentRail";
 import Properties from "./Properties";
 import Resizer from "./Resizer";
 import { extractFrontmatter } from "../lib/frontmatter";
+import { useIsDesktop } from "../lib/use-media-query";
+import { readSelection, type SelectionResult } from "../lib/selection";
 import type { Comment, FullDoc } from "../types";
-import type { SelectionResult } from "../lib/selection";
 
 interface Props {
   doc: FullDoc;
@@ -46,9 +47,14 @@ export default function DocumentView({
     const stored = Number(localStorage.getItem(RAIL_KEY));
     return Number.isFinite(stored) && stored > 0 ? clampRail(stored) : RAIL_DEFAULT;
   });
+  const isDesktop = useIsDesktop();
   const [railVisible, setRailVisible] = useState<boolean>(() => {
     return localStorage.getItem(RAIL_VISIBLE_KEY) !== "0";
   });
+  // On mobile, default the rail to closed so the doc fills the screen.
+  useEffect(() => {
+    if (!isDesktop) setRailVisible(false);
+  }, [isDesktop]);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const v = localStorage.getItem(VIEW_MODE_KEY);
     return v === "raw" ? "raw" : "rendered";
@@ -57,9 +63,12 @@ export default function DocumentView({
   useEffect(() => {
     localStorage.setItem(RAIL_KEY, String(railWidth));
   }, [railWidth]);
+  // Only persist visibility on desktop — see equivalent comment in App.tsx.
   useEffect(() => {
-    localStorage.setItem(RAIL_VISIBLE_KEY, railVisible ? "1" : "0");
-  }, [railVisible]);
+    if (isDesktop) {
+      localStorage.setItem(RAIL_VISIBLE_KEY, railVisible ? "1" : "0");
+    }
+  }, [railVisible, isDesktop]);
   useEffect(() => {
     localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
@@ -87,10 +96,16 @@ export default function DocumentView({
     [doc.id, onChangeComments],
   );
 
-  const handleSpanClick = useCallback((ids: string[]) => {
-    if (ids.length === 0) return;
-    setActiveCommentId(ids[0]);
-  }, []);
+  const handleSpanClick = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      setActiveCommentId(ids[0]);
+      // On mobile, tapping a highlight should open the rail to show the
+      // matching thread, since the rail isn't otherwise visible.
+      if (!isDesktop) setRailVisible(true);
+    },
+    [isDesktop],
+  );
 
   const frontmatter = useMemo(() => extractFrontmatter(doc.body), [doc.body]);
 
@@ -107,7 +122,10 @@ export default function DocumentView({
           title={doc.title}
         />
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-10 py-8 max-w-3xl mx-auto" ref={renderRef}>
+          <div
+            className="px-4 py-5 md:px-10 md:py-8 max-w-3xl mx-auto"
+            ref={renderRef}
+          >
             {viewMode === "rendered" ? (
               <>
                 {frontmatter && <Properties frontmatter={frontmatter} />}
@@ -124,8 +142,15 @@ export default function DocumentView({
           </div>
         </div>
 
-        {viewMode === "rendered" && (
+        {viewMode === "rendered" && isDesktop && (
           <SelectionPopover
+            containerRef={renderRef}
+            source={doc.body}
+            onComment={handleNewComment}
+          />
+        )}
+        {viewMode === "rendered" && !isDesktop && (
+          <MobileSelectionBar
             containerRef={renderRef}
             source={doc.body}
             onComment={handleNewComment}
@@ -133,28 +158,86 @@ export default function DocumentView({
         )}
       </section>
 
-      {railVisible && (
-        <>
-          <Resizer
-            side="right"
-            width={railWidth}
-            min={RAIL_MIN}
-            max={RAIL_MAX}
-            onResize={setRailWidth}
-            onReset={resetRail}
-          />
-          <CommentRail
-            doc={doc}
-            comments={comments}
-            activeCommentId={activeCommentId}
-            pendingFocusId={pendingFocusId}
-            onClearPendingFocus={() => setPendingFocusId(null)}
-            onActivate={setActiveCommentId}
-            onChangeComments={onChangeComments}
-            width={railWidth}
-          />
-        </>
+      {isDesktop && railVisible && (
+        <Resizer
+          side="right"
+          width={railWidth}
+          min={RAIL_MIN}
+          max={RAIL_MAX}
+          onResize={setRailWidth}
+          onReset={resetRail}
+        />
       )}
+      <CommentRail
+        doc={doc}
+        comments={comments}
+        activeCommentId={activeCommentId}
+        pendingFocusId={pendingFocusId}
+        onClearPendingFocus={() => setPendingFocusId(null)}
+        onActivate={setActiveCommentId}
+        onChangeComments={onChangeComments}
+        width={railWidth}
+        visible={railVisible}
+        isDesktop={isDesktop}
+        onClose={() => setRailVisible(false)}
+      />
+      {!isDesktop && railVisible && (
+        <button
+          type="button"
+          onClick={() => setRailVisible(false)}
+          className="fixed inset-0 z-30 bg-stone-900/40"
+          aria-label="Close comments"
+        />
+      )}
+    </div>
+  );
+}
+
+function MobileSelectionBar({
+  containerRef,
+  source,
+  onComment,
+}: {
+  containerRef: React.RefObject<HTMLElement>;
+  source: string;
+  onComment: (sel: SelectionResult) => void;
+}) {
+  const [sel, setSel] = useState<SelectionResult | null>(null);
+
+  useEffect(() => {
+    const handler = () => {
+      const container = containerRef.current;
+      if (!container) {
+        setSel(null);
+        return;
+      }
+      // Defer slightly so iOS's selection UI settles first.
+      setTimeout(() => {
+        setSel(readSelection(container, source));
+      }, 50);
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [containerRef, source]);
+
+  if (!sel) return null;
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 bg-stone-900 text-white px-4 py-3 flex items-center gap-3 shadow-2xl pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+      <div className="flex-1 min-w-0 text-xs opacity-80 truncate">
+        “{sel.anchor.snippet}”
+      </div>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          onComment(sel);
+          window.getSelection()?.removeAllRanges();
+          setSel(null);
+        }}
+        className="shrink-0 rounded-md bg-amber-500 text-white text-sm font-semibold px-4 py-2 active:bg-amber-600"
+      >
+        Comment
+      </button>
     </div>
   );
 }
@@ -240,7 +323,7 @@ function IconBtn({
       type="button"
       onClick={onClick}
       title={title}
-      className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md text-stone-600 hover:bg-stone-100 hover:text-stone-900 text-base leading-none"
+      className="shrink-0 inline-flex items-center justify-center w-10 h-10 md:w-7 md:h-7 rounded-md text-stone-600 hover:bg-stone-100 hover:text-stone-900 text-lg md:text-base leading-none"
     >
       {children}
     </button>
