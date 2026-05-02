@@ -108,6 +108,8 @@ export function readSelection(
       endLine: end.line,
       endCol: end.col,
       snippet: snippetFromSource(source, a, b),
+      contextBefore: source.slice(Math.max(0, a - 30), a),
+      contextAfter: source.slice(b, Math.min(source.length, b + 30)),
     },
     rect,
   };

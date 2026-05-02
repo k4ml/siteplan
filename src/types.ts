@@ -13,6 +13,11 @@ export interface CommentAnchor {
   endLine: number;
   endCol: number;
   snippet: string;
+  /** Up to ~30 chars of source immediately before the snippet — used to
+   * disambiguate when the snippet appears multiple times after edits. */
+  contextBefore?: string;
+  /** Up to ~30 chars of source immediately after the snippet. */
+  contextAfter?: string;
 }
 
 export type CommentStatus = "open" | "resolved" | "orphaned" | "applied";
