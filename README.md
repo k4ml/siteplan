@@ -4,18 +4,7 @@ A local-first web app for reviewing the long markdown plans that Claude / Codex 
 
 It exposes a small HTTP API on `127.0.0.1:5173` so the AI tool that wrote the plan can push it in, wait for your comments, then pull it back with replies attached. No copy-paste shuffle, no dropped context.
 
-```text
-┌────────────┬────────────────────────────────────┬──────────────────┐
-│ Docs       │  Document title                    │  Comments (3)    │
-│            │  ────────────────────────────────  │                  │
-│ • Plan A ● │  # Big heading                     │  ┌────────────┐  │
-│ • Plan B   │                                    │  │ Me: ...    │  │
-│ • Notes    │  Body prose with proper typography │  │ Claude:... │  │
-│            │  ░░highlighted span░░              │  │ [reply][✓] │  │
-│ [+ New]    │                                    │  └────────────┘  │
-│ [Paste]    │                                    │                  │
-└────────────┴────────────────────────────────────┴──────────────────┘
-```
+![Markdown Reviewer in action — a doc on the left with a yellow-highlighted comment span, and a comment rail on the right showing a resolved Me/Claude conversation and an open thread](./docs/screenshot.png)
 
 ## Why?
 
@@ -31,7 +20,7 @@ This app inverts that: the plan is the document, your questions live as side-com
 ## Install and run
 
 ```bash
-git clone https://github.com/<you>/markdown-reviewer.git
+git clone https://github.com/amree/markdown-reviewer.git
 cd markdown-reviewer
 mise install            # one-time, gets node + pnpm
 pnpm install

@@ -2,7 +2,18 @@
   "name": "markdown-reviewer",
   "private": true,
   "version": "0.0.1",
+  "description": "Local-first web app for reviewing AI-generated markdown plans with threaded, span-anchored comments and a round-trippable footer format that lets the AI pull, address, and push back.",
   "type": "module",
+  "license": "MIT",
+  "author": "Amree Zaid (https://github.com/amree)",
+  "homepage": "https://github.com/amree/markdown-reviewer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amree/markdown-reviewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/amree/markdown-reviewer/issues"
+  },
   "bin": {
     "mdr": "./bin/mdr"
   },
