@@ -33,8 +33,21 @@ export default function SelectionPopover({
 
   if (!sel) return null;
 
-  const top = sel.rect.top + window.scrollY - 40;
-  const left = sel.rect.left + window.scrollX + sel.rect.width / 2 - 60;
+  // Position is viewport-relative because we use `position: fixed`; the
+  // selection's bounding rect from getBoundingClientRect is already in
+  // viewport coords, so no scroll math.
+  const POPOVER_W = 110;
+  const POPOVER_H = 32;
+  const PAD = 8;
+  const rawLeft = sel.rect.left + sel.rect.width / 2 - POPOVER_W / 2;
+  const rawTop = sel.rect.top - POPOVER_H - 6;
+  const left = Math.max(
+    PAD,
+    Math.min(window.innerWidth - POPOVER_W - PAD, rawLeft),
+  );
+  // If the selection is near the top, flip the popover below the selection.
+  const top =
+    rawTop < PAD ? sel.rect.bottom + 6 : rawTop;
 
   return (
     <button
@@ -49,8 +62,8 @@ export default function SelectionPopover({
         window.getSelection()?.removeAllRanges();
         setSel(null);
       }}
-      className="absolute z-30 inline-flex items-center gap-1.5 rounded-md bg-stone-900 text-white text-xs font-medium px-2.5 py-1.5 shadow-lg hover:bg-stone-800"
-      style={{ top, left }}
+      className="fixed z-30 inline-flex items-center gap-1.5 rounded-md bg-stone-900 text-white text-xs font-medium px-2.5 py-1.5 shadow-lg hover:bg-stone-800"
+      style={{ top, left, width: POPOVER_W, height: POPOVER_H }}
     >
       <svg
         viewBox="0 0 24 24"
