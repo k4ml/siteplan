@@ -1,0 +1,237 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import Sidebar from "./components/Sidebar";
+import DocumentView from "./components/DocumentView";
+import PasteModal from "./components/PasteModal";
+import ExportModal from "./components/ExportModal";
+import {
+  createDoc,
+  deleteDoc,
+  getDoc,
+  listDocs,
+  patchDoc,
+  putDocMarkdown,
+  subscribeDocEvents,
+} from "./lib/api-client";
+import type { Comment, DocSummary, FullDoc } from "./types";
+
+const ACTIVE_KEY = "mdr:activeSlug";
+
+type ModalState =
+  | { kind: "none" }
+  | { kind: "paste"; mode: "create" | "replace" }
+  | { kind: "export" };
+
+export default function App() {
+  const [docs, setDocs] = useState<DocSummary[]>([]);
+  const [activeSlug, setActiveSlug] = useState<string | null>(() =>
+    localStorage.getItem(ACTIVE_KEY),
+  );
+  const [activeDoc, setActiveDoc] = useState<FullDoc | null>(null);
+  const [modal, setModal] = useState<ModalState>({ kind: "none" });
+  const [error, setError] = useState<string | null>(null);
+  const activeSlugRef = useRef(activeSlug);
+  activeSlugRef.current = activeSlug;
+
+  const refreshDocs = useCallback(async () => {
+    try {
+      const list = await listDocs();
+      setDocs(list);
+      return list;
+    } catch (e) {
+      setError((e as Error).message);
+      return [];
+    }
+  }, []);
+
+  const loadActive = useCallback(async (slug: string | null) => {
+    if (slug == null) {
+      setActiveDoc(null);
+      return;
+    }
+    try {
+      const doc = await getDoc(slug);
+      setActiveDoc(doc);
+    } catch (e) {
+      setError((e as Error).message);
+      setActiveDoc(null);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    (async () => {
+      const list = await refreshDocs();
+      const stored = localStorage.getItem(ACTIVE_KEY);
+      const slug = stored && list.some((d) => d.slug === stored)
+        ? stored
+        : list[0]?.slug ?? null;
+      setActiveSlug(slug);
+      if (slug) await loadActive(slug);
+      else if (list.length === 0) setModal({ kind: "paste", mode: "create" });
+    })();
+  }, [refreshDocs, loadActive]);
+
+  // Persist active slug
+  useEffect(() => {
+    if (activeSlug == null) localStorage.removeItem(ACTIVE_KEY);
+    else localStorage.setItem(ACTIVE_KEY, activeSlug);
+  }, [activeSlug]);
+
+  // Refetch active when slug changes
+  useEffect(() => {
+    if (activeSlug) loadActive(activeSlug);
+    else setActiveDoc(null);
+  }, [activeSlug, loadActive]);
+
+  // SSE: refresh on any event; refetch active doc if it was touched.
+  useEffect(() => {
+    const unsub = subscribeDocEvents((e) => {
+      refreshDocs();
+      if (e.slug !== activeSlugRef.current) return;
+      if (e.type === "deleted") {
+        setActiveDoc(null);
+        setActiveSlug(null);
+      } else {
+        loadActive(e.slug);
+      }
+    });
+    return unsub;
+  }, [refreshDocs, loadActive]);
+
+  const handlePasteCreate = useCallback(async (input: string) => {
+    try {
+      const summary = await createDoc(input);
+      await refreshDocs();
+      setActiveSlug(summary.slug);
+      setModal({ kind: "none" });
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }, [refreshDocs]);
+
+  const handlePasteReplace = useCallback(
+    async (input: string) => {
+      if (!activeSlug) return handlePasteCreate(input);
+      try {
+        await putDocMarkdown(activeSlug, input);
+        // SSE will trigger refresh; modal closes immediately.
+        setModal({ kind: "none" });
+      } catch (e) {
+        setError((e as Error).message);
+      }
+    },
+    [activeSlug, handlePasteCreate],
+  );
+
+  const handleDeleteDoc = useCallback(
+    async (slug: string) => {
+      if (!confirm("Delete this document and all its comments?")) return;
+      try {
+        await deleteDoc(slug);
+        // SSE will refresh the list; clear active locally if it was this one.
+        if (activeSlug === slug) {
+          setActiveSlug(null);
+          setActiveDoc(null);
+        }
+      } catch (e) {
+        setError((e as Error).message);
+      }
+    },
+    [activeSlug],
+  );
+
+  const updateActiveComments = useCallback(
+    async (updater: (cs: Comment[]) => Comment[]) => {
+      if (!activeDoc) return;
+      const next = updater(activeDoc.comments);
+      // Optimistic local update for snappy feel.
+      setActiveDoc({ ...activeDoc, comments: next });
+      try {
+        const updated = await patchDoc(activeDoc.slug, { comments: next });
+        setActiveDoc(updated);
+      } catch (e) {
+        setError((e as Error).message);
+        // Rollback by refetching authoritative state.
+        loadActive(activeDoc.slug);
+      }
+    },
+    [activeDoc, loadActive],
+  );
+
+  return (
+    <div className="flex h-full text-sm">
+      <Sidebar
+        docs={docs}
+        activeSlug={activeSlug}
+        onSelect={setActiveSlug}
+        onNew={() => setModal({ kind: "paste", mode: "create" })}
+        onPasteReplace={() => setModal({ kind: "paste", mode: "replace" })}
+        onExport={() => setModal({ kind: "export" })}
+        onDelete={handleDeleteDoc}
+      />
+      <main className="flex-1 min-w-0 flex">
+        {activeDoc ? (
+          <DocumentView
+            doc={activeDoc}
+            onChangeComments={updateActiveComments}
+          />
+        ) : (
+          <EmptyState onNew={() => setModal({ kind: "paste", mode: "create" })} />
+        )}
+      </main>
+
+      {modal.kind === "paste" && (
+        <PasteModal
+          mode={modal.mode}
+          docTitle={activeDoc?.title}
+          onCancel={() => setModal({ kind: "none" })}
+          onSubmit={
+            modal.mode === "create" ? handlePasteCreate : handlePasteReplace
+          }
+        />
+      )}
+      {modal.kind === "export" && activeDoc && (
+        <ExportModal
+          doc={activeDoc}
+          comments={activeDoc.comments}
+          onClose={() => setModal({ kind: "none" })}
+        />
+      )}
+
+      {error && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg text-xs flex items-center gap-3">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="opacity-80 hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ onNew }: { onNew: () => void }) {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-lg font-semibold text-stone-700">No document open</h2>
+        <p className="mt-1 text-stone-500">
+          Paste a markdown plan or push one via{" "}
+          <code className="text-xs bg-stone-100 px-1 py-0.5 rounded">mdr push</code>
+          .
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          className="mt-4 inline-flex items-center rounded-md bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-800"
+        >
+          Paste markdown
+        </button>
+      </div>
+    </div>
+  );
+}

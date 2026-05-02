@@ -1,0 +1,72 @@
+@import "highlight.js/styles/github-dark.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+/* Spans containing any portion of a comment's range get a pointer cursor;
+   the actual paint is done by the CSS Custom Highlight API below. */
+span[data-comment-ids] {
+  cursor: pointer;
+}
+
+::highlight(mdr-comment-open) {
+  background-color: rgb(254 240 138 / 0.55); /* yellow-200/55 */
+  text-decoration-line: underline;
+  text-decoration-color: rgb(202 138 4 / 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+::highlight(mdr-comment-active) {
+  background-color: rgb(250 204 21 / 0.65); /* yellow-400/65 */
+  text-decoration-line: underline;
+  text-decoration-color: rgb(202 138 4 / 0.7);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
+}
+
+::highlight(mdr-comment-resolved) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: rgb(120 113 108 / 0.55);
+  text-underline-offset: 2px;
+}
+
+::highlight(mdr-comment-orphan) {
+  background-color: rgb(254 202 202 / 0.6); /* red-200/60 */
+  text-decoration-line: underline;
+  text-decoration-color: rgb(220 38 38 / 0.6);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* Tighten the prose container slightly so it feels like a doc */
+.prose pre {
+  @apply bg-stone-900 text-stone-50;
+}
+
+.prose :where(code):not(:where(pre code)) {
+  @apply bg-stone-200/70 text-stone-800 px-1 py-0.5 rounded text-[0.9em];
+  font-weight: 500;
+}
+
+.prose :where(code):not(:where(pre code))::before,
+.prose :where(code):not(:where(pre code))::after {
+  content: none;
+}
