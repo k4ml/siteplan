@@ -1,6 +1,40 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CommentThread from "./CommentThread";
-import type { Comment, FullDoc } from "../types";
+import type { Comment, CommentStatus, FullDoc } from "../types";
+
+const FILTER_KEY = "mdr:commentFilter";
+const ALL_STATUSES: CommentStatus[] = [
+  "open",
+  "resolved",
+  "applied",
+  "orphaned",
+];
+
+function loadFilter(): Set<CommentStatus> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(FILTER_KEY) || "null");
+    if (Array.isArray(raw)) {
+      return new Set(raw.filter((s) => ALL_STATUSES.includes(s)));
+    }
+  } catch {
+    /* fall through to default */
+  }
+  return new Set(ALL_STATUSES);
+}
+
+const STATUS_LABEL: Record<CommentStatus, string> = {
+  open: "Open",
+  resolved: "Resolved",
+  applied: "Applied",
+  orphaned: "Orphaned",
+};
+
+const STATUS_ACTIVE_CLASS: Record<CommentStatus, string> = {
+  open: "bg-amber-100 text-amber-800 border-amber-300",
+  resolved: "bg-green-100 text-green-700 border-green-300",
+  applied: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  orphaned: "bg-red-100 text-red-700 border-red-300",
+};
 
 interface Props {
   doc: FullDoc;
@@ -32,6 +66,20 @@ export default function CommentRail({
   onClose,
 }: Props) {
   if (isDesktop && !visible) return null;
+  const [filter, setFilter] = useState<Set<CommentStatus>>(loadFilter);
+  useEffect(() => {
+    localStorage.setItem(FILTER_KEY, JSON.stringify([...filter]));
+  }, [filter]);
+
+  const toggleFilter = (s: CommentStatus) => {
+    setFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+  };
+
   const sorted = useMemo(
     () =>
       [...comments].sort((a, b) => {
@@ -43,8 +91,24 @@ export default function CommentRail({
     [comments],
   );
 
-  const openCount = comments.filter((c) => c.status === "open").length;
-  const orphanCount = comments.filter((c) => c.status === "orphaned").length;
+  const visible_threads = useMemo(
+    () => sorted.filter((c) => filter.has(c.status)),
+    [sorted, filter],
+  );
+
+  const counts = useMemo(() => {
+    const out: Record<CommentStatus, number> = {
+      open: 0,
+      resolved: 0,
+      applied: 0,
+      orphaned: 0,
+    };
+    for (const c of comments) out[c.status]++;
+    return out;
+  }, [comments]);
+
+  const orphanCount = counts.orphaned;
+  const hiddenCount = comments.length - visible_threads.length;
 
   const railRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -71,7 +135,7 @@ export default function CommentRail({
           <div className="flex items-baseline gap-3">
             <h2 className="font-semibold text-stone-900">Comments</h2>
             <span className="text-xs text-stone-500">
-              {openCount} open · {comments.length} total
+              {counts.open} open · {comments.length} total
             </span>
           </div>
           {orphanCount > 0 && (
@@ -92,14 +156,47 @@ export default function CommentRail({
         )}
       </div>
 
+      <div className="px-3 py-2 flex flex-wrap gap-1 border-b border-stone-200">
+        {ALL_STATUSES.map((s) => {
+          const active = filter.has(s);
+          const count = counts[s];
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => toggleFilter(s)}
+              className={
+                "text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full border transition " +
+                (active
+                  ? STATUS_ACTIVE_CLASS[s]
+                  : "bg-white border-stone-200 text-stone-400 hover:bg-stone-100")
+              }
+              title={`${active ? "Hide" : "Show"} ${STATUS_LABEL[s].toLowerCase()} threads`}
+            >
+              {STATUS_LABEL[s]}{" "}
+              <span className="ml-0.5 font-mono opacity-80">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div ref={railRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-        {sorted.length === 0 && (
+        {visible_threads.length === 0 && (
           <div className="text-sm text-stone-500 px-1 py-4">
-            Highlight any text in the document and click <em>Comment</em> to
-            start a thread.
+            {comments.length === 0 ? (
+              <>
+                Highlight any text in the document and click <em>Comment</em>{" "}
+                to start a thread.
+              </>
+            ) : (
+              <>
+                {hiddenCount} thread{hiddenCount === 1 ? "" : "s"} hidden by
+                the filter above.
+              </>
+            )}
           </div>
         )}
-        {sorted.map((c) => (
+        {visible_threads.map((c) => (
           <CommentThread
             key={c.id}
             doc={doc}

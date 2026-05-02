@@ -129,6 +129,21 @@ export default function MarkdownRenderer({
       Highlights.set("mdr-comment-active", new HighlightCtor(...activeR));
   }, [source, comments, activeCommentId]);
 
+  // When the active comment changes, scroll its first highlighted span into
+  // view if it isn't already. Skip applied comments — their anchor text is
+  // gone, so any "scroll target" would be misleading.
+  useEffect(() => {
+    if (!activeCommentId) return;
+    const target = comments.find((c) => c.id === activeCommentId);
+    if (!target || target.status === "applied") return;
+    const root = containerRef.current;
+    if (!root) return;
+    const span = root.querySelector<HTMLElement>(
+      `[data-comment-ids~="${CSS.escape(activeCommentId)}"]`,
+    );
+    span?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [activeCommentId, comments]);
+
   // Click handler: find clicked highlight and broadcast its comment ids.
   useEffect(() => {
     const root = containerRef.current;
