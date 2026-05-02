@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import ClaudeMark from "./ClaudeMark";
 import type { Author, Comment, FullDoc } from "../types";
 
 interface Props {
@@ -236,16 +237,22 @@ function MessageBody({ text }: { text: string }) {
 }
 
 function Avatar({ author }: { author: Author }) {
-  const isMe = author === "Me";
+  if (author === "Me") {
+    return (
+      <div
+        className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold bg-stone-700 text-white"
+        title="Me"
+      >
+        M
+      </div>
+    );
+  }
   return (
     <div
-      className={
-        "shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold " +
-        (isMe ? "bg-amber-500 text-white" : "bg-violet-500 text-white")
-      }
-      title={author}
+      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-[#D97757] text-white"
+      title="Claude"
     >
-      {isMe ? "M" : "C"}
+      <ClaudeMark size={14} />
     </div>
   );
 }
