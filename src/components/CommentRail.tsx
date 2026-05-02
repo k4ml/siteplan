@@ -9,32 +9,30 @@ const ALL_STATUSES: CommentStatus[] = [
   "applied",
   "orphaned",
 ];
+type FilterTab = "all" | CommentStatus;
+const ALL_TABS: FilterTab[] = ["all", ...ALL_STATUSES];
 
-function loadFilter(): Set<CommentStatus> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(FILTER_KEY) || "null");
-    if (Array.isArray(raw)) {
-      return new Set(raw.filter((s) => ALL_STATUSES.includes(s)));
-    }
-  } catch {
-    /* fall through to default */
+function loadTab(): FilterTab {
+  const stored = localStorage.getItem(FILTER_KEY);
+  if (stored && (ALL_TABS as string[]).includes(stored)) {
+    return stored as FilterTab;
   }
-  return new Set(ALL_STATUSES);
+  return "all";
 }
 
-const STATUS_LABEL: Record<CommentStatus, string> = {
+const TAB_LABEL: Record<FilterTab, string> = {
+  all: "All",
   open: "Open",
   resolved: "Resolved",
   applied: "Applied",
   orphaned: "Orphaned",
 };
 
-const STATUS_ACTIVE_CLASS: Record<CommentStatus, string> = {
-  open: "bg-amber-100 text-amber-800 border-amber-300",
-  resolved: "bg-green-100 text-green-700 border-green-300",
-  applied: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  orphaned: "bg-red-100 text-red-700 border-red-300",
-};
+const PILL_BASE =
+  "text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full border transition";
+const PILL_ACTIVE = "bg-amber-100 text-amber-900 border-amber-300";
+const PILL_INACTIVE =
+  "bg-white text-stone-500 border-stone-200 hover:bg-stone-100";
 
 interface Props {
   doc: FullDoc;
@@ -66,19 +64,10 @@ export default function CommentRail({
   onClose,
 }: Props) {
   if (isDesktop && !visible) return null;
-  const [filter, setFilter] = useState<Set<CommentStatus>>(loadFilter);
+  const [tab, setTab] = useState<FilterTab>(loadTab);
   useEffect(() => {
-    localStorage.setItem(FILTER_KEY, JSON.stringify([...filter]));
-  }, [filter]);
-
-  const toggleFilter = (s: CommentStatus) => {
-    setFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(s)) next.delete(s);
-      else next.add(s);
-      return next;
-    });
-  };
+    localStorage.setItem(FILTER_KEY, tab);
+  }, [tab]);
 
   const sorted = useMemo(
     () =>
@@ -92,8 +81,8 @@ export default function CommentRail({
   );
 
   const visible_threads = useMemo(
-    () => sorted.filter((c) => filter.has(c.status)),
-    [sorted, filter],
+    () => (tab === "all" ? sorted : sorted.filter((c) => c.status === tab)),
+    [sorted, tab],
   );
 
   const counts = useMemo(() => {
@@ -156,24 +145,26 @@ export default function CommentRail({
         )}
       </div>
 
-      <div className="px-3 py-2 flex flex-wrap gap-1 border-b border-stone-200">
-        {ALL_STATUSES.map((s) => {
-          const active = filter.has(s);
-          const count = counts[s];
+      <div
+        role="tablist"
+        className="px-3 py-2 flex flex-wrap gap-1 border-b border-stone-200"
+      >
+        {ALL_TABS.map((t) => {
+          const active = tab === t;
+          const count = t === "all" ? comments.length : counts[t];
           return (
             <button
-              key={s}
+              key={t}
+              role="tab"
+              aria-selected={active}
               type="button"
-              onClick={() => toggleFilter(s)}
+              onClick={() => setTab(t)}
               className={
-                "text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full border transition " +
-                (active
-                  ? STATUS_ACTIVE_CLASS[s]
-                  : "bg-white border-stone-200 text-stone-400 hover:bg-stone-100")
+                PILL_BASE + " " + (active ? PILL_ACTIVE : PILL_INACTIVE)
               }
-              title={`${active ? "Hide" : "Show"} ${STATUS_LABEL[s].toLowerCase()} threads`}
+              title={`Show ${TAB_LABEL[t].toLowerCase()}`}
             >
-              {STATUS_LABEL[s]}{" "}
+              {TAB_LABEL[t]}{" "}
               <span className="ml-0.5 font-mono opacity-80">{count}</span>
             </button>
           );
@@ -190,8 +181,10 @@ export default function CommentRail({
               </>
             ) : (
               <>
-                {hiddenCount} thread{hiddenCount === 1 ? "" : "s"} hidden by
-                the filter above.
+                No {TAB_LABEL[tab].toLowerCase()} threads
+                {hiddenCount > 0
+                  ? ` — ${hiddenCount} hidden by the filter above.`
+                  : "."}
               </>
             )}
           </div>
