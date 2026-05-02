@@ -63,7 +63,7 @@ export default function SelectionPopover({
         setSel(null);
       }}
       className="fixed z-30 inline-flex items-center gap-1.5 rounded-md bg-stone-900 text-white text-xs font-medium px-2.5 py-1.5 shadow-lg hover:bg-stone-800"
-      style={{ top, left, width: POPOVER_W, height: POPOVER_H }}
+      style={{ top, left }}
     >
       <svg
         viewBox="0 0 24 24"

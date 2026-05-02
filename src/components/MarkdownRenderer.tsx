@@ -141,7 +141,10 @@ export default function MarkdownRenderer({
     const span = root.querySelector<HTMLElement>(
       `[data-comment-ids~="${CSS.escape(activeCommentId)}"]`,
     );
-    span?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // `center` puts the highlight mid-viewport when there's room; the browser
+    // clamps to the nearest edge automatically when the highlight is too close
+    // to the start or end of the doc to fully center.
+    span?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [activeCommentId, comments]);
 
   // Click handler: find clicked highlight and broadcast its comment ids.
