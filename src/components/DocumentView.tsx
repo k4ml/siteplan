@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import MarkdownRenderer from "./MarkdownRenderer";
 import SelectionPopover from "./SelectionPopover";
 import CommentRail from "./CommentRail";
+import Resizer from "./Resizer";
 import type { Comment, FullDoc } from "../types";
 import type { SelectionResult } from "../lib/selection";
 
@@ -13,11 +14,30 @@ interface Props {
   ) => void | Promise<void>;
 }
 
+const RAIL_KEY = "mdr:railWidth";
+const RAIL_MIN = 280;
+const RAIL_MAX = 800;
+const RAIL_DEFAULT = 320;
+
+function clampRail(n: number): number {
+  return Math.max(RAIL_MIN, Math.min(RAIL_MAX, n));
+}
+
 export default function DocumentView({ doc, onChangeComments }: Props) {
   const comments = doc.comments;
   const renderRef = useRef<HTMLDivElement>(null);
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  const [railWidth, setRailWidth] = useState<number>(() => {
+    const stored = Number(localStorage.getItem(RAIL_KEY));
+    return Number.isFinite(stored) && stored > 0 ? clampRail(stored) : RAIL_DEFAULT;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(RAIL_KEY, String(railWidth));
+  }, [railWidth]);
+
+  const resetRail = useCallback(() => setRailWidth(RAIL_DEFAULT), []);
 
   const handleNewComment = useCallback(
     (sel: SelectionResult) => {
@@ -72,6 +92,14 @@ export default function DocumentView({ doc, onChangeComments }: Props) {
         />
       </section>
 
+      <Resizer
+        side="right"
+        width={railWidth}
+        min={RAIL_MIN}
+        max={RAIL_MAX}
+        onResize={setRailWidth}
+        onReset={resetRail}
+      />
       <CommentRail
         doc={doc}
         comments={comments}
@@ -80,6 +108,7 @@ export default function DocumentView({ doc, onChangeComments }: Props) {
         onClearPendingFocus={() => setPendingFocusId(null)}
         onActivate={setActiveCommentId}
         onChangeComments={onChangeComments}
+        width={railWidth}
       />
     </div>
   );

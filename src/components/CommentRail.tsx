@@ -12,6 +12,7 @@ interface Props {
   onChangeComments: (
     updater: (cs: Comment[]) => Comment[],
   ) => void | Promise<void>;
+  width?: number;
 }
 
 export default function CommentRail({
@@ -22,6 +23,7 @@ export default function CommentRail({
   onClearPendingFocus,
   onActivate,
   onChangeComments,
+  width,
 }: Props) {
   const sorted = useMemo(
     () =>
@@ -47,7 +49,10 @@ export default function CommentRail({
   }, [activeCommentId]);
 
   return (
-    <aside className="w-80 shrink-0 border-l border-stone-200 bg-stone-50 flex flex-col">
+    <aside
+      className="shrink-0 border-l border-stone-200 bg-stone-50 flex flex-col"
+      style={{ width: width ?? 320 }}
+    >
       <div className="px-4 py-3 border-b border-stone-200">
         <div className="flex items-baseline justify-between">
           <h2 className="font-semibold text-stone-900">Comments</h2>

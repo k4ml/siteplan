@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import DocumentView from "./components/DocumentView";
 import PasteModal from "./components/PasteModal";
 import ExportModal from "./components/ExportModal";
+import Resizer from "./components/Resizer";
 import {
   createDoc,
   deleteDoc,
@@ -15,6 +16,10 @@ import {
 import type { Comment, DocSummary, FullDoc } from "./types";
 
 const ACTIVE_KEY = "mdr:activeSlug";
+const SIDEBAR_KEY = "mdr:sidebarWidth";
+const SIDEBAR_MIN = 200;
+const SIDEBAR_MAX = 480;
+const SIDEBAR_DEFAULT = 256;
 
 type ModalState =
   | { kind: "none" }
@@ -31,6 +36,16 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const activeSlugRef = useRef(activeSlug);
   activeSlugRef.current = activeSlug;
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    const stored = Number(localStorage.getItem(SIDEBAR_KEY));
+    return Number.isFinite(stored) && stored > 0
+      ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, stored))
+      : SIDEBAR_DEFAULT;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, String(sidebarWidth));
+  }, [sidebarWidth]);
 
   const refreshDocs = useCallback(async () => {
     try {
@@ -175,6 +190,15 @@ export default function App() {
         onPasteReplace={() => setModal({ kind: "paste", mode: "replace" })}
         onExport={() => setModal({ kind: "export" })}
         onDelete={handleDeleteDoc}
+        width={sidebarWidth}
+      />
+      <Resizer
+        side="left"
+        width={sidebarWidth}
+        min={SIDEBAR_MIN}
+        max={SIDEBAR_MAX}
+        onResize={setSidebarWidth}
+        onReset={() => setSidebarWidth(SIDEBAR_DEFAULT)}
       />
       <main className="flex-1 min-w-0 flex">
         {activeDoc ? (

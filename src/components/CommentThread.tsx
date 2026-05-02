@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { formatDistanceToNow } from "date-fns";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 import type { Author, Comment, FullDoc } from "../types";
 
 interface Props {
@@ -144,9 +147,7 @@ export default function CommentThread({
                       })}
                     </span>
                   </div>
-                  <div className="text-sm text-stone-800 whitespace-pre-wrap break-words mt-0.5">
-                    {m.text}
-                  </div>
+                  <MessageBody text={m.text} />
                 </div>
               </div>
             ))}
@@ -206,6 +207,30 @@ export default function CommentThread({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function MessageBody({ text }: { text: string }) {
+  return (
+    <div
+      className={
+        // prose-sm scales the markdown styles down for the narrow rail.
+        // The override classes tighten vertical spacing so each message
+        // stays compact, and shrink code blocks so they don't dominate.
+        "mdr-msg prose prose-sm prose-stone max-w-none mt-0.5 " +
+        "prose-p:my-1.5 prose-headings:my-2 " +
+        "prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 " +
+        "prose-pre:my-2 prose-pre:px-2 prose-pre:py-1.5 prose-pre:text-[11px] prose-pre:leading-snug " +
+        "prose-code:text-[11px]"
+      }
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+      >
+        {text}
+      </ReactMarkdown>
     </div>
   );
 }

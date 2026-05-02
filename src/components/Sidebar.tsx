@@ -8,6 +8,7 @@ interface Props {
   onPasteReplace: () => void;
   onExport: () => void;
   onDelete: (slug: string) => void;
+  width?: number;
 }
 
 export default function Sidebar({
@@ -18,9 +19,13 @@ export default function Sidebar({
   onPasteReplace,
   onExport,
   onDelete,
+  width,
 }: Props) {
   return (
-    <aside className="w-64 shrink-0 border-r border-stone-200 bg-white flex flex-col">
+    <aside
+      className="shrink-0 border-r border-stone-200 bg-white flex flex-col"
+      style={{ width: width ?? 256 }}
+    >
       <div className="px-4 py-3 border-b border-stone-200">
         <h1 className="font-semibold text-stone-900">Markdown Reviewer</h1>
         <p className="text-xs text-stone-500 mt-0.5">
