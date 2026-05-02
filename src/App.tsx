@@ -17,6 +17,7 @@ import type { Comment, DocSummary, FullDoc } from "./types";
 
 const ACTIVE_KEY = "mdr:activeSlug";
 const SIDEBAR_KEY = "mdr:sidebarWidth";
+const SIDEBAR_VISIBLE_KEY = "mdr:sidebarVisible";
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 480;
 const SIDEBAR_DEFAULT = 256;
@@ -42,10 +43,16 @@ export default function App() {
       ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, stored))
       : SIDEBAR_DEFAULT;
   });
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(
+    () => localStorage.getItem(SIDEBAR_VISIBLE_KEY) !== "0",
+  );
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_KEY, String(sidebarWidth));
   }, [sidebarWidth]);
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_VISIBLE_KEY, sidebarVisible ? "1" : "0");
+  }, [sidebarVisible]);
 
   const refreshDocs = useCallback(async () => {
     try {
@@ -182,32 +189,42 @@ export default function App() {
 
   return (
     <div className="flex h-full text-sm">
-      <Sidebar
-        docs={docs}
-        activeSlug={activeSlug}
-        onSelect={setActiveSlug}
-        onNew={() => setModal({ kind: "paste", mode: "create" })}
-        onPasteReplace={() => setModal({ kind: "paste", mode: "replace" })}
-        onExport={() => setModal({ kind: "export" })}
-        onDelete={handleDeleteDoc}
-        width={sidebarWidth}
-      />
-      <Resizer
-        side="left"
-        width={sidebarWidth}
-        min={SIDEBAR_MIN}
-        max={SIDEBAR_MAX}
-        onResize={setSidebarWidth}
-        onReset={() => setSidebarWidth(SIDEBAR_DEFAULT)}
-      />
+      {sidebarVisible && (
+        <>
+          <Sidebar
+            docs={docs}
+            activeSlug={activeSlug}
+            onSelect={setActiveSlug}
+            onNew={() => setModal({ kind: "paste", mode: "create" })}
+            onPasteReplace={() => setModal({ kind: "paste", mode: "replace" })}
+            onExport={() => setModal({ kind: "export" })}
+            onDelete={handleDeleteDoc}
+            width={sidebarWidth}
+          />
+          <Resizer
+            side="left"
+            width={sidebarWidth}
+            min={SIDEBAR_MIN}
+            max={SIDEBAR_MAX}
+            onResize={setSidebarWidth}
+            onReset={() => setSidebarWidth(SIDEBAR_DEFAULT)}
+          />
+        </>
+      )}
       <main className="flex-1 min-w-0 flex">
         {activeDoc ? (
           <DocumentView
             doc={activeDoc}
             onChangeComments={updateActiveComments}
+            sidebarHidden={!sidebarVisible}
+            onToggleSidebar={() => setSidebarVisible((v) => !v)}
           />
         ) : (
-          <EmptyState onNew={() => setModal({ kind: "paste", mode: "create" })} />
+          <EmptyState
+            onNew={() => setModal({ kind: "paste", mode: "create" })}
+            sidebarHidden={!sidebarVisible}
+            onToggleSidebar={() => setSidebarVisible((v) => !v)}
+          />
         )}
       </main>
 
@@ -245,23 +262,47 @@ export default function App() {
   );
 }
 
-function EmptyState({ onNew }: { onNew: () => void }) {
+function EmptyState({
+  onNew,
+  sidebarHidden,
+  onToggleSidebar,
+}: {
+  onNew: () => void;
+  sidebarHidden: boolean;
+  onToggleSidebar: () => void;
+}) {
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-lg font-semibold text-stone-700">No document open</h2>
-        <p className="mt-1 text-stone-500">
-          Paste a markdown plan or push one via{" "}
-          <code className="text-xs bg-stone-100 px-1 py-0.5 rounded">mdr push</code>
-          .
-        </p>
+    <div className="flex-1 flex flex-col">
+      <header className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-stone-200 bg-white/70">
         <button
           type="button"
-          onClick={onNew}
-          className="mt-4 inline-flex items-center rounded-md bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-800"
+          onClick={onToggleSidebar}
+          title={sidebarHidden ? "Show document list" : "Hide document list"}
+          className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md text-stone-600 hover:bg-stone-100 text-base leading-none"
         >
-          Paste markdown
+          {sidebarHidden ? "›" : "‹"}
         </button>
+      </header>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-stone-700">
+            No document open
+          </h2>
+          <p className="mt-1 text-stone-500">
+            Paste a markdown plan or push one via{" "}
+            <code className="text-xs bg-stone-100 px-1 py-0.5 rounded">
+              mdr push
+            </code>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={onNew}
+            className="mt-4 inline-flex items-center rounded-md bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-800"
+          >
+            Paste markdown
+          </button>
+        </div>
       </div>
     </div>
   );
