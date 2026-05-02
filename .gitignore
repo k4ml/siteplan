@@ -6,6 +6,6 @@ dist
 .idea
 .vscode
 
-# Playwright MCP scratch
+# Playwright MCP scratch (only root-level PNGs)
 .playwright-mcp/
-*.png
+/*.png
