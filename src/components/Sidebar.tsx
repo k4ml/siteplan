@@ -1,4 +1,3 @@
-import ClaudeMark from "./ClaudeMark";
 import type { DocSummary } from "../types";
 
 interface Props {
@@ -100,10 +99,10 @@ export default function Sidebar({
                     )}
                     {d.lastEditor === "claude" && (
                       <span
-                        className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-stone-300 bg-white overflow-hidden"
+                        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#D97757] text-white text-[8px] font-semibold"
                         title="Last edited by Claude"
                       >
-                        <ClaudeMark size={12} />
+                        C
                       </span>
                     )}
                   </div>
