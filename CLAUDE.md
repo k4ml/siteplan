@@ -2,9 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What this is
-
-A local-first web app for reviewing markdown plans (typically AI-generated) with Google-Docs-style threaded comments anchored to text spans. The app exposes an HTTP API on `127.0.0.1:5173` so that Claude (or any other tool) can push docs in, wait for human comments, then pull the doc back with comments appended in a round-trippable footer block.
+For end-user documentation (what it is, install, workflow, CLI reference, skill setup), see [README.md](./README.md). This file focuses on the architecture and conventions you need to be productive editing the code.
 
 ## Setup and commands
 
@@ -19,17 +17,7 @@ pnpm build              # tsc --noEmit && vite build
 pnpm preview            # serve dist/
 ```
 
-The CLI lives at `bin/mdr` (executable). Symlink it into PATH (`ln -s $(pwd)/bin/mdr ~/.local/bin/mdr`) and use it from anywhere:
-
-```bash
-mdr push plan.md          # PUT — slug defaults to filename without extension
-mdr pull <slug>           # GET as markdown (body + comment footer)
-mdr ls                    # tabular list of docs
-mdr status <slug>         # JSON status
-mdr watch <slug>          # block until openComments == 0
-```
-
-Override the API base with `MDR_BASE` (default `http://127.0.0.1:5173`).
+The CLI lives at `bin/mdr`. See README.md for installation; full command reference is in `mdr --help`.
 
 ## Architecture
 
@@ -62,7 +50,13 @@ Claude: <text>
 -----
 ```
 
-`parseImport` takes the round-trip markdown plus an array of existing comments. It diffs by `(startLine,startCol,endLine,endCol)` to preserve comment IDs across rounds, and re-anchors comments by snippet matching when the body changed: snippet still at coords → keep; snippet found uniquely elsewhere → resnap; otherwise → mark `status: 'orphaned'`. RESOLVED comments are never marked orphaned (they're already done).
+`parseImport` takes the round-trip markdown plus an array of existing comments. It diffs by `(startLine,startCol,endLine,endCol)` to preserve comment IDs across rounds. The re-anchor algorithm in `relocate()` walks several strategies in order:
+
+1. Snippet still at original coords → keep.
+2. Snippet appears uniquely in body → use it.
+3. Snippet appears multiple times → score each occurrence by common-affix length with stored `contextBefore`/`contextAfter` (each up to ~30 chars), pick best.
+4. Snippet missing but contextBefore tail or contextAfter head still locates uniquely → anchor by context, treat the slice between as the new snippet text.
+5. Nothing matches → status becomes `"orphaned"` if the comment was UNRESOLVED, or `"applied"` if it was RESOLVED (so the rendered highlight is suppressed instead of pointing at unrelated text).
 
 ### Backend: Vite middleware + flat-file storage
 
@@ -82,7 +76,11 @@ Routes:
 
 ### Frontend: API-driven, SSE-refreshed
 
-`src/lib/api-client.ts` wraps fetch. `src/App.tsx` holds `docs: DocSummary[]`, `activeSlug`, `activeDoc: FullDoc`, subscribes to `/api/events` via `EventSource`, and re-fetches the active doc on any matching event. Comment mutations from the UI go through `patchDoc()`; the only `localStorage` use that remains is `mdr:activeSlug` (which doc to open on cold load).
+`src/lib/api-client.ts` wraps fetch. `src/App.tsx` holds `docs: DocSummary[]`, `activeSlug`, `activeDoc: FullDoc`, subscribes to `/api/events` via `EventSource`, and re-fetches the active doc on any matching event. Comment mutations from the UI go through `patchDoc()`. `localStorage` is used for UI preferences only: `mdr:activeSlug`, `mdr:sidebarWidth` / `mdr:sidebarVisible`, `mdr:railWidth` / `mdr:railVisible`, `mdr:viewMode`, and `mdr:collapsed:<slug>` (per-thread collapsed state).
+
+### Mobile and responsive layout
+
+`src/lib/use-media-query.ts` provides `useIsDesktop()` (≥ 768px). Below that, both side panels are rendered as fixed drawers (`translate-x-full` / `-translate-x-full` when closed) instead of inline flex children. The Resizer component is hidden. The selection-to-comment popover is replaced by a bottom-anchored `MobileSelectionBar` that doesn't fight the OS context menu for screen space. Visibility persistence is desktop-only — mobile drawer toggles never overwrite the persisted desktop preference.
 
 ### Type vocabulary
 
@@ -91,11 +89,13 @@ Routes:
 - `FullDoc extends Doc` — adds `comments: Comment[]` and `lastEditor`. What `getDoc` and `patchDoc` return.
 - `DocSummary` — slug, title, comment counts, lastEditor, updatedAt. What `listDocs` returns.
 
-`Editor` is `"me" | "claude"`. `CommentStatus` is `"open" | "resolved" | "orphaned"`.
+`Editor` is `"me" | "claude"`. `CommentStatus` is `"open" | "resolved" | "applied" | "orphaned"`.
+
+A `CommentAnchor` carries `startLine` / `startCol` / `endLine` / `endCol` (1-based, vi-style), the `snippet` string, and optional `contextBefore` / `contextAfter` (each up to ~30 chars) used for re-anchoring across edits.
 
 ### Skill
 
-A skill lives at `~/.claude/skills/markdown-reviewer/SKILL.md` (outside this repo). It documents the push → wait → pull → resolve → push workflow for any Claude session. If you change the API or the round-trip format, update the skill in lockstep.
+The Claude Code skill is the source of truth at `skills/markdown-reviewer/SKILL.md` in this repo. Users symlink it into `~/.claude/skills/markdown-reviewer` (see README). **If you change the API surface or the round-trip footer format, update this skill in the same commit** — anyone with the symlink installed picks up the new instructions immediately.
 
 ## Things that are deliberately simple
 
@@ -104,3 +104,9 @@ A skill lives at `~/.claude/skills/markdown-reviewer/SKILL.md` (outside this rep
 - No router. Single-page app, single active doc at a time.
 - Auth = none. The server binds `127.0.0.1` (in `vite.config.ts`); do not change that to `0.0.0.0` without adding auth.
 - Data is plain JSON files. `cat ~/.markdown-reviewer/docs/<slug>.json` to debug state.
+
+## Editing-related conventions
+
+- Don't introduce abstractions ahead of need (YAGNI). The codebase has had multiple successful "add an X column to Y endpoint" changes done in 5–20 lines; resist refactors that don't buy something concrete.
+- Comments in code: only when the *why* is non-obvious (a hidden constraint, a workaround). Don't narrate the *what* — the names already do that.
+- The user prefers to drive their own browser verification — do not invoke Playwright MCP tools for testing UI changes without explicit consent.
