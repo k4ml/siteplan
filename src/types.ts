@@ -15,7 +15,7 @@ export interface CommentAnchor {
   snippet: string;
 }
 
-export type CommentStatus = "open" | "resolved" | "orphaned";
+export type CommentStatus = "open" | "resolved" | "orphaned" | "applied";
 
 export interface Comment {
   id: string;

@@ -107,6 +107,9 @@ export default function MarkdownRenderer({
     const orphanR: Range[] = [];
     const activeR: Range[] = [];
     for (const r of ranges) {
+      // "applied" comments lost their anchor when the body was edited — drawing
+      // them would highlight unrelated text, so skip entirely.
+      if (r.status === "applied") continue;
       const range = makeRange(root, r.start, r.end);
       if (!range) continue;
       if (r.id === activeCommentId) activeR.push(range);

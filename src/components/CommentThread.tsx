@@ -28,7 +28,9 @@ export default function CommentThread({
   onDelete,
 }: Props) {
   const [draft, setDraft] = useState("");
-  const [collapsed, setCollapsed] = useState(comment.status === "resolved");
+  const [collapsed, setCollapsed] = useState(
+    comment.status === "resolved" || comment.status === "applied",
+  );
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -59,14 +61,19 @@ export default function CommentThread({
   };
 
   const toggleResolved = () => {
-    onChange((c) => ({
-      ...c,
-      status: c.status === "resolved" ? "open" : "resolved",
-      updatedAt: new Date().toISOString(),
-    }));
+    onChange((c) => {
+      const wasDone = c.status === "resolved" || c.status === "applied";
+      return {
+        ...c,
+        status: wasDone ? "open" : "resolved",
+        updatedAt: new Date().toISOString(),
+      };
+    });
   };
 
   const isResolved = comment.status === "resolved";
+  const isApplied = comment.status === "applied";
+  const isDone = isResolved || isApplied;
   const isOrphan = comment.status === "orphaned";
 
   return (
@@ -76,7 +83,7 @@ export default function CommentThread({
       className={
         "rounded-md border bg-white shadow-sm transition " +
         (isActive ? "border-amber-500 ring-2 ring-amber-200" : "border-stone-200") +
-        (isResolved && collapsed ? " opacity-70" : "")
+        (isDone && collapsed ? " opacity-70" : "")
       }
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100 text-xs text-stone-500">
@@ -84,7 +91,7 @@ export default function CommentThread({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            if (isResolved) setCollapsed((v) => !v);
+            if (isDone) setCollapsed((v) => !v);
           }}
           className="font-mono hover:text-stone-700"
           title={`${comment.anchor.startLine}/${comment.anchor.startCol}:${comment.anchor.endLine}/${comment.anchor.endCol}`}
@@ -101,6 +108,14 @@ export default function CommentThread({
           {isResolved && (
             <span className="px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
               resolved
+            </span>
+          )}
+          {isApplied && (
+            <span
+              className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold inline-flex items-center gap-0.5"
+              title="Resolved by editing the document — original anchor text is gone"
+            >
+              ✓ applied
             </span>
           )}
           <button
@@ -121,14 +136,15 @@ export default function CommentThread({
         <div
           className={
             "px-3 pt-2 text-xs italic " +
-            (isOrphan ? "text-red-700" : "text-stone-500")
+            (isOrphan ? "text-red-700" : "text-stone-500") +
+            (isApplied ? " line-through opacity-70" : "")
           }
         >
           “{comment.anchor.snippet}”
         </div>
       )}
 
-      {!(isResolved && collapsed) && (
+      {!(isDone && collapsed) && (
         <>
           <div className="px-3 py-2 space-y-2">
             {comment.messages.length === 0 && (
@@ -162,12 +178,12 @@ export default function CommentThread({
                 }}
                 className={
                   "ml-auto text-xs rounded-md px-2 py-1 border " +
-                  (isResolved
+                  (isDone
                     ? "bg-stone-100 text-stone-700 border-stone-300 hover:bg-stone-200"
                     : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100")
                 }
               >
-                {isResolved ? "Reopen" : "Resolve"}
+                {isDone ? "Reopen" : "Resolve"}
               </button>
             </div>
             <textarea
@@ -182,7 +198,7 @@ export default function CommentThread({
                 }
               }}
               placeholder={
-                isResolved
+                isDone
                   ? "Add a follow-up note…"
                   : "Reply… (⌘↩ to send)"
               }

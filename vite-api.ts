@@ -140,7 +140,9 @@ function summarize(doc: FullDoc): DocSummary {
     slug: doc.slug,
     title: doc.title,
     openComments: doc.comments.filter((c) => c.status === "open").length,
-    resolvedComments: doc.comments.filter((c) => c.status === "resolved").length,
+    resolvedComments: doc.comments.filter(
+      (c) => c.status === "resolved" || c.status === "applied",
+    ).length,
     orphanedComments: doc.comments.filter((c) => c.status === "orphaned").length,
     updatedAt: doc.updatedAt,
     lastEditor: doc.lastEditor,

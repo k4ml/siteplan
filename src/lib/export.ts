@@ -2,7 +2,11 @@ import type { Comment, Doc } from "../types";
 import { COMMENT_SENTINEL, COMMENT_SEPARATOR } from "./prompt";
 
 function statusLabel(status: Comment["status"]): "RESOLVED" | "UNRESOLVED" {
-  return status === "resolved" ? "RESOLVED" : "UNRESOLVED";
+  // "applied" is a UI distinction (resolved + anchor lost); the AI workflow
+  // only knows RESOLVED / UNRESOLVED, so serialize it as RESOLVED.
+  return status === "resolved" || status === "applied"
+    ? "RESOLVED"
+    : "UNRESOLVED";
 }
 
 function serializeOne(c: Comment): string {

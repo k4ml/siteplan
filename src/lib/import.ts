@@ -84,16 +84,21 @@ export function parseImport(
           endCol: eLC.col,
           snippet: priorSnippet,
         };
-      } else if (status !== "resolved") {
+      } else if (status === "resolved") {
+        // RESOLVED + snippet vanished → Claude applied the change. Mark
+        // distinctly so we skip drawing a misleading highlight.
+        status = "applied";
+        anchor.snippet = priorSnippet;
+      } else {
         status = "orphaned";
         orphaned++;
         anchor.snippet = priorSnippet;
-      } else {
-        anchor.snippet = priorSnippet;
       }
     } else if (priorSnippet) {
-      // truncated snippet, can't reliably search — keep as-is and orphan if mismatch
-      if (status !== "resolved") {
+      // truncated snippet, can't reliably search — keep as-is and degrade
+      if (status === "resolved") {
+        status = "applied";
+      } else {
         status = "orphaned";
         orphaned++;
       }
