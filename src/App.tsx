@@ -84,16 +84,23 @@ export default function App() {
   }, [activeSlug, loadActive]);
 
   // SSE: refresh on any event; refetch active doc if it was touched.
+  // If no doc is active and one just arrived (created or updated), auto-focus
+  // it so a fresh `mdr push` lands in front of the user immediately.
   useEffect(() => {
     const unsub = subscribeDocEvents((e) => {
       refreshDocs();
-      if (e.slug !== activeSlugRef.current) return;
       if (e.type === "deleted") {
-        setActiveDoc(null);
-        setActiveSlug(null);
-      } else {
-        loadActive(e.slug);
+        if (e.slug === activeSlugRef.current) {
+          setActiveDoc(null);
+          setActiveSlug(null);
+        }
+        return;
       }
+      if (activeSlugRef.current == null) {
+        setActiveSlug(e.slug);
+        return;
+      }
+      if (e.slug === activeSlugRef.current) loadActive(e.slug);
     });
     return unsub;
   }, [refreshDocs, loadActive]);
