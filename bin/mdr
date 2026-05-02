@@ -90,6 +90,12 @@ Commands:
       Make <slug> the active doc in the running browser tab and
       print its URL. Requires the app to be running.
 
+  mdr backfill <slug>
+      Populate contextBefore/contextAfter on any comment missing them
+      (older comments created before context-aware re-anchoring), then
+      round-trip the doc to recover orphans whose anchors can now be
+      re-found via context.
+
 Environment:
   MDR_BASE  API base URL (default: http://127.0.0.1:5173)
 `;
@@ -217,6 +223,83 @@ async function cmdOpen(args) {
   process.stdout.write(`${BASE}/?slug=${encodeURIComponent(slug)}\n`);
 }
 
+async function cmdBackfill(args) {
+  const slug = args.positional[1];
+  if (!slug) throw new Error("Usage: mdr backfill <slug>");
+
+  const doc = await (
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      headers: { Accept: "application/json" },
+    })
+  ).json();
+
+  const body = doc.body;
+  const lineStarts = [0];
+  for (let i = 0; i < body.length; i++) {
+    if (body.charCodeAt(i) === 10) lineStarts.push(i + 1);
+  }
+  const lineColToOffset = (line, col) => {
+    const idx = Math.max(0, Math.min(lineStarts.length - 1, line - 1));
+    const start = lineStarts[idx];
+    const nextStart =
+      idx + 1 < lineStarts.length ? lineStarts[idx + 1] : body.length + 1;
+    const maxCol = nextStart - start;
+    return start + Math.max(1, Math.min(maxCol, col)) - 1;
+  };
+
+  let backfilled = 0;
+  const updated = doc.comments.map((c) => {
+    const a = c.anchor;
+    if (a.contextBefore != null && a.contextAfter != null) return c;
+    const s = lineColToOffset(a.startLine, a.startCol);
+    const e = lineColToOffset(a.endLine, a.endCol);
+    backfilled++;
+    return {
+      ...c,
+      anchor: {
+        ...a,
+        contextBefore: body.slice(Math.max(0, s - 30), s),
+        contextAfter: body.slice(e, Math.min(body.length, e + 30)),
+      },
+    };
+  });
+
+  process.stderr.write(
+    `backfilled context on ${backfilled} of ${doc.comments.length} comment${
+      doc.comments.length === 1 ? "" : "s"
+    }\n`,
+  );
+
+  if (backfilled > 0) {
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comments: updated }),
+    });
+  }
+
+  // Round-trip the doc so the new context-aware relocate runs on every
+  // comment — this is what actually recovers orphans.
+  const markdown = await (
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      headers: { Accept: "text/markdown" },
+    })
+  ).text();
+
+  const summary = await (
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "text/markdown" },
+      body: markdown,
+    })
+  ).json();
+
+  process.stdout.write(JSON.stringify(summary, null, 2) + "\n");
+  process.stderr.write(
+    `done — ${summary.openComments} open, ${summary.resolvedComments} resolved, ${summary.orphanedComments} orphaned\n`,
+  );
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const cmd = args.positional[0];
@@ -238,6 +321,8 @@ async function main() {
         return await cmdWatch(args);
       case "open":
         return await cmdOpen(args);
+      case "backfill":
+        return await cmdBackfill(args);
       default:
         process.stderr.write(`unknown command: ${cmd}\n\n${HELP}`);
         process.exit(1);
