@@ -281,10 +281,16 @@ async function handlePutDoc(
   if (existing && ifUnmodifiedSince && editor === "claude") {
     const since = new Date(ifUnmodifiedSince as string).getTime();
     const lastTouched = new Date(existing.updatedAt).getTime();
+    // HTTP `Last-Modified` only carries second precision (RFC 7232), so a
+    // freshly-saved doc whose updatedAt has milliseconds will always look
+    // "newer" than the value Claude pulled even when nothing changed.
+    // Compare floored to seconds to give the round-trip a fair chance.
+    const sinceSec = Math.floor(since / 1000);
+    const lastSec = Math.floor(lastTouched / 1000);
     if (
       Number.isFinite(since) &&
       existing.lastEditor === "me" &&
-      lastTouched > since
+      lastSec > sinceSec
     ) {
       res.statusCode = 409;
       res.setHeader("Content-Type", "text/markdown; charset=utf-8");
