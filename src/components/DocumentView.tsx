@@ -109,6 +109,19 @@ export default function DocumentView({
 
   const frontmatter = useMemo(() => extractFrontmatter(doc.body), [doc.body]);
 
+  const toggleBoth = useCallback(() => {
+    const eitherHidden = sidebarHidden || !railVisible;
+    if (eitherHidden) {
+      // Reveal whichever is hidden so both are visible.
+      if (sidebarHidden) onToggleSidebar();
+      setRailVisible(true);
+    } else {
+      // Both visible — collapse both for focus mode.
+      onToggleSidebar();
+      setRailVisible(false);
+    }
+  }, [sidebarHidden, railVisible, onToggleSidebar]);
+
   return (
     <div className="flex-1 flex min-w-0">
       <section className="flex-1 min-w-0 flex flex-col relative">
@@ -118,6 +131,7 @@ export default function DocumentView({
           viewMode={viewMode}
           onToggleSidebar={onToggleSidebar}
           onToggleRail={toggleRail}
+          onToggleBoth={toggleBoth}
           onSetViewMode={setViewMode}
           title={doc.title}
         />
@@ -248,6 +262,7 @@ interface ToolbarProps {
   viewMode: ViewMode;
   onToggleSidebar: () => void;
   onToggleRail: () => void;
+  onToggleBoth: () => void;
   onSetViewMode: (m: ViewMode) => void;
   title: string;
 }
@@ -258,9 +273,11 @@ function Toolbar({
   viewMode,
   onToggleSidebar,
   onToggleRail,
+  onToggleBoth,
   onSetViewMode,
   title,
 }: ToolbarProps) {
+  const bothHidden = sidebarHidden && railHidden;
   return (
     <header className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-stone-200 bg-white/70 backdrop-blur sticky top-0 z-10">
       <IconBtn
@@ -271,9 +288,31 @@ function Toolbar({
         <span className="sr-only">Toggle sidebar</span>
       </IconBtn>
 
+      <IconBtn
+        title={
+          bothHidden
+            ? "Show both panels"
+            : "Hide both panels (focus mode)"
+        }
+        onClick={onToggleBoth}
+      >
+        <FocusModeIcon active={bothHidden} />
+        <span className="sr-only">Toggle both panels</span>
+      </IconBtn>
+
       <div className="flex-1 min-w-0 px-2">
-        <div className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold">
-          Document
+        <div className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold flex items-center gap-1.5">
+          <span>Markdown Reviewer</span>
+          <span aria-hidden="true">·</span>
+          <a
+            href={`https://github.com/amree/markdown-reviewer/commit/${__MDR_VERSION__}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono normal-case tracking-normal text-stone-400 hover:text-stone-700"
+            title="View this build on GitHub"
+          >
+            {__MDR_VERSION__}
+          </a>
         </div>
         <div className="text-sm font-semibold text-stone-900 truncate">
           {title}
@@ -306,6 +345,40 @@ function Toolbar({
         <span className="sr-only">Toggle comments</span>
       </IconBtn>
     </header>
+  );
+}
+
+function FocusModeIcon({ active }: { active: boolean }) {
+  // Two square brackets pointing inward when off (will collapse panels);
+  // pointing outward when on (will expand panels back).
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {active ? (
+        <>
+          <path d="M2 5V2h3" />
+          <path d="M14 5V2h-3" />
+          <path d="M2 11v3h3" />
+          <path d="M14 11v3h-3" />
+        </>
+      ) : (
+        <>
+          <path d="M5 2H2v3" />
+          <path d="M11 2h3v3" />
+          <path d="M5 14H2v-3" />
+          <path d="M11 14h3v-3" />
+        </>
+      )}
+    </svg>
   );
 }
 
