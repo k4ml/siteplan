@@ -61,6 +61,15 @@ span[data-comment-ids] {
   @apply bg-stone-900 text-stone-50;
 }
 
+/* Headings are wrapped in anchor links by rehype-autolink-headings so
+   they're clickable for deep-linking. Strip the prose default underline
+   since the heading itself is the affordance. */
+.prose .heading-anchor,
+.prose .heading-anchor:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
 .prose :where(code):not(:where(pre code)) {
   @apply bg-stone-200/70 text-stone-800 px-1 py-0.5 rounded text-[0.9em];
   font-weight: 500;
