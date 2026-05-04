@@ -76,7 +76,30 @@ Routes:
 
 ### Frontend: API-driven, SSE-refreshed
 
-`src/lib/api-client.ts` wraps fetch. `src/App.tsx` holds `docs: DocSummary[]`, `activeSlug`, `activeDoc: FullDoc`, subscribes to `/api/events` via `EventSource`, and re-fetches the active doc on any matching event. Comment mutations from the UI go through `patchDoc()`. `localStorage` is used for UI preferences only: `mdr:activeSlug`, `mdr:sidebarWidth` / `mdr:sidebarVisible`, `mdr:railWidth` / `mdr:railVisible`, `mdr:viewMode`, and `mdr:collapsed:<slug>` (per-thread collapsed state).
+`src/lib/api-client.ts` wraps fetch. `src/App.tsx` holds `docs: DocSummary[]`, `activeSlug`, `activeDoc: FullDoc`, subscribes to `/api/events` via `EventSource`, and re-fetches the active doc on any matching event. Comment mutations from the UI go through `patchDoc()`.
+
+`localStorage` keys (UI preferences only — never doc data):
+- `mdr:activeSlug` — last opened doc
+- `mdr:sidebarWidth` / `mdr:sidebarVisible` — left panel
+- `mdr:railWidth` / `mdr:railVisible` — right comment panel
+- `mdr:viewMode` — `"rendered"` or `"raw"`
+- `mdr:collapsed:<slug>` — `Record<commentId, boolean>` per doc
+- `mdr:commentFilter` — single-select rail filter tab (`"all"` | `CommentStatus`)
+
+### Routing
+
+The app uses path-based routing without any router library. `src/App.tsx`:
+- Reads `window.location.pathname` on mount; URL > localStorage > most-recent for picking the initial doc
+- `pushState`s the path whenever `activeSlug` changes
+- Listens to `popstate` so browser back/forward switches docs
+
+Sidebar entries are real `<a href="/<slug>">` anchors with a modifier-aware onClick — plain clicks stay SPA, but cmd / ctrl / shift / alt / middle clicks pass through to the browser so docs open in new tabs naturally.
+
+Vite's dev server's SPA fallback handles `/api/`-not-prefixed unknown paths by serving `index.html`.
+
+### Build version
+
+`vite.config.ts` runs `git rev-parse --short HEAD` at startup and exposes the result as the global `__MDR_VERSION__` via Vite's `define`. The toolbar renders it as a link to the GitHub commit so any browser tab tells you which build it's running. Falls back to `"dev"` if git isn't available.
 
 ### Mobile and responsive layout
 
@@ -110,3 +133,10 @@ The Claude Code skill is the source of truth at `skills/markdown-reviewer/SKILL.
 - Don't introduce abstractions ahead of need (YAGNI). The codebase has had multiple successful "add an X column to Y endpoint" changes done in 5–20 lines; resist refactors that don't buy something concrete.
 - Comments in code: only when the *why* is non-obvious (a hidden constraint, a workaround). Don't narrate the *what* — the names already do that.
 - The user prefers to drive their own browser verification — do not invoke Playwright MCP tools for testing UI changes without explicit consent.
+
+## Gotchas worth remembering
+
+- **`vite-api.ts` is plugin code** — Vite loads it once at server boot, not via HMR. Any change to the middleware requires the user to restart `pnpm dev`.
+- **Remark plugins that synthesize new nodes can drop `position` metadata.** We learned this with `remark-breaks` (uses `mdast-util-find-and-replace`, which creates split text fragments without `position`). The `rehype-positions` plugin then skips wrapping those fragments → highlights clip to the first source line of multi-line paragraphs. Before adding any new remark plugin, verify it preserves `position` on synthesized nodes, or write a position-patch step that runs before `rehype-positions`.
+- **HTTP `Last-Modified` is second-precision only (RFC 7232).** `If-Unmodified-Since` round-trips therefore lose the millisecond. The 409 lock comparison in `vite-api.ts` floors both sides to seconds — don't change that without re-introducing the false-positive bug.
+- **`mdr backfill <slug>`** is the rescue command for legacy comments without `contextBefore`/`contextAfter`. It populates context from the current body and re-PUTs to give orphans another shot at re-anchoring.

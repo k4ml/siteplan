@@ -102,19 +102,23 @@ Environment:
 
 ## App features
 
-- **Three-pane layout**: doc list (left), document (middle), comment threads (right). Both side panels are resizable (drag the dividers, double-click to reset) and hideable (chevron buttons in the toolbar).
+- **Three-pane layout**: doc list (left), document (middle), comment threads (right). Both side panels are resizable (drag the dividers, double-click to reset) and hideable (chevron buttons in the toolbar). A **focus-mode** button between the left chevron and the title hides or shows both panels in one click.
 - **Mobile responsive**: below 768px width, side panels become slide-out drawers; touch-friendly hit targets; bottom-anchored "Comment" bar appears when text is selected.
+- **Direct URLs per doc**: `http://127.0.0.1:5173/<slug>` opens that doc directly. Sidebar items are real anchor links — cmd / ctrl / middle-click opens a doc in a new tab. Browser back/forward switches between docs.
 - **Edit your own comments** until Claude has replied to them. Pencil icon on hover (always visible on mobile).
+- **Comment thread filters**: tabs above the thread list (All · Open · Resolved · Applied · Orphaned), single-select, persisted across reloads.
 - **Comment statuses**:
   - `open` — yellow highlight; you're waiting for Claude
   - `resolved` — dashed underline; Claude responded inline
   - `applied` — no highlight; Claude resolved by editing the body, original anchor text is gone but the thread is kept as audit trail
   - `orphaned` — red highlight; the anchor text is gone and couldn't be re-found
 - **Smart re-anchoring**: when Claude inserts or removes sections that shift line numbers, comments re-anchor by their stored snippet + ~30 chars of surrounding context. Survives typical edit cycles.
+- **Click a thread → its anchor scrolls into the centre of the doc viewport** (only when not already on screen).
 - **Markdown in messages**: replies render fully (code blocks, tables, lists, bold).
 - **Frontmatter renders as a Properties block**, not as garbled headings.
 - **Rendered / Raw view toggle** in the toolbar.
-- **Persistent UI state**: panel widths, doc selection, and per-thread collapsed state survive reloads.
+- **Build version in the toolbar** — short git SHA links to the commit on GitHub so you always know which build you're running.
+- **Persistent UI state**: panel widths and visibility, active doc, view mode, per-thread collapsed state, and filter tab all survive reloads.
 
 ## Data location
 
