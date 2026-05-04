@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.log
+.vite
+.idea
+.vscode
+
+# Playwright MCP scratch (only root-level PNGs)
+.playwright-mcp/
+/*.png

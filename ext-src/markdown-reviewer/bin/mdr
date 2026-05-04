@@ -1,0 +1,342 @@
+#!/usr/bin/env node
+// Tiny CLI for the Markdown Reviewer local API. No deps.
+
+import { readFile } from "node:fs/promises";
+import { basename, extname } from "node:path";
+import process from "node:process";
+
+const BASE = process.env.MDR_BASE ?? "http://127.0.0.1:5173";
+
+function slugify(s) {
+  return (
+    s
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || "doc"
+  );
+}
+
+function slugFromFilename(path) {
+  return slugify(basename(path, extname(path)));
+}
+
+function parseArgs(argv) {
+  const out = { positional: [], flags: {} };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith("--")) {
+      const key = a.slice(2);
+      const next = argv[i + 1];
+      if (next && !next.startsWith("--")) {
+        out.flags[key] = next;
+        i++;
+      } else {
+        out.flags[key] = true;
+      }
+    } else {
+      out.positional.push(a);
+    }
+  }
+  return out;
+}
+
+async function api(path, init = {}) {
+  const r = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: { ...(init.headers ?? {}), "X-Md-Reviewer-Editor": "claude" },
+  });
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    if (r.status === 409) {
+      const err = new Error(
+        `409 Conflict: the doc was edited by you since the last pull. Re-pull and merge before pushing.`,
+      );
+      err.code = 409;
+      err.body = text;
+      throw err;
+    }
+    throw new Error(`${r.status} ${r.statusText}${text ? ` — ${text}` : ""}`);
+  }
+  return r;
+}
+
+const HELP = `mdr — Markdown Reviewer CLI
+
+Commands:
+  mdr push <file> [--slug NAME] [--if-unmodified-since ISO]
+      Send a markdown file to the local reviewer app.
+      Slug defaults to the filename without extension.
+      Use '-' as <file> to read from stdin (requires --slug):
+        echo "# Plan" | mdr push - --slug my-plan
+
+  mdr pull <slug> [--out FILE]
+      Fetch the doc + comment footer as markdown.
+      Prints to stdout, or writes to FILE.
+
+  mdr status [<slug>]
+      Without slug: lists all docs (slug, open, total, lastEditor).
+      With slug: prints JSON status for that doc.
+
+  mdr ls
+      Same as 'mdr status' with no argument.
+
+  mdr watch <slug> [--interval SECONDS]
+      Block until openComments == 0. Default poll interval 3s.
+
+  mdr open <slug>
+      Make <slug> the active doc in the running browser tab and
+      print its URL. Requires the app to be running.
+
+  mdr backfill <slug>
+      Populate contextBefore/contextAfter on any comment missing them
+      (older comments created before context-aware re-anchoring), then
+      round-trip the doc to recover orphans whose anchors can now be
+      re-found via context.
+
+Environment:
+  MDR_BASE  API base URL (default: http://127.0.0.1:5173)
+`;
+
+async function readStdin() {
+  const chunks = [];
+  for await (const c of process.stdin) chunks.push(c);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function cmdPush(args) {
+  const file = args.positional[1];
+  if (!file) throw new Error("Usage: mdr push <file>  (or  mdr push - --slug NAME)");
+  const fromStdin = file === "-";
+  if (fromStdin && !args.flags.slug) {
+    throw new Error("mdr push - requires --slug NAME (no filename to derive from)");
+  }
+  const slug = args.flags.slug ?? slugFromFilename(file);
+  const body = fromStdin ? await readStdin() : await readFile(file, "utf8");
+  if (!body.trim()) throw new Error("nothing to push (empty body)");
+  const headers = { "Content-Type": "text/markdown" };
+  if (args.flags["if-unmodified-since"]) {
+    headers["If-Unmodified-Since"] = args.flags["if-unmodified-since"];
+  }
+  let r;
+  try {
+    r = await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      headers,
+      body,
+    });
+  } catch (e) {
+    if (e.code === 409) {
+      process.stderr.write(`${e.message}\n`);
+      process.stderr.write(`--- current state on server ---\n`);
+      process.stdout.write(e.body);
+      process.exit(2);
+    }
+    throw e;
+  }
+  const summary = await r.json();
+  process.stdout.write(JSON.stringify(summary, null, 2) + "\n");
+  process.stderr.write(
+    `pushed ${slug} → ${BASE}/  (${summary.openComments} open comment${
+      summary.openComments === 1 ? "" : "s"
+    })\n`,
+  );
+}
+
+async function cmdPull(args) {
+  const slug = args.positional[1];
+  if (!slug) throw new Error("Usage: mdr pull <slug>");
+  const r = await api(`/api/docs/${encodeURIComponent(slug)}`, {
+    headers: { Accept: "text/markdown" },
+  });
+  const lastModified = r.headers.get("last-modified");
+  if (lastModified) {
+    process.stderr.write(`Last-Modified: ${lastModified}\n`);
+  }
+  const text = await r.text();
+  if (args.flags.out) {
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(args.flags.out, text, "utf8");
+    process.stderr.write(`wrote ${args.flags.out} (${text.length} bytes)\n`);
+  } else {
+    process.stdout.write(text);
+    if (!text.endsWith("\n")) process.stdout.write("\n");
+  }
+}
+
+async function cmdStatus(args) {
+  const slug = args.positional[1];
+  if (slug) {
+    const r = await api(`/api/docs/${encodeURIComponent(slug)}/status`);
+    process.stdout.write(JSON.stringify(await r.json(), null, 2) + "\n");
+    return;
+  }
+  const r = await api(`/api/docs`);
+  const docs = await r.json();
+  if (docs.length === 0) {
+    process.stdout.write("(no docs)\n");
+    return;
+  }
+  const rows = docs.map((d) => [
+    d.slug,
+    String(d.openComments),
+    String(d.openComments + d.resolvedComments + d.orphanedComments),
+    d.lastEditor,
+    d.title,
+  ]);
+  const headers = ["SLUG", "OPEN", "TOTAL", "LAST", "TITLE"];
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((r) => r[i].length)),
+  );
+  const fmt = (cells) =>
+    cells.map((c, i) => c.padEnd(widths[i])).join("  ");
+  process.stdout.write(fmt(headers) + "\n");
+  for (const r of rows) process.stdout.write(fmt(r) + "\n");
+}
+
+async function cmdWatch(args) {
+  const slug = args.positional[1];
+  if (!slug) throw new Error("Usage: mdr watch <slug>");
+  const interval = Number(args.flags.interval ?? 3) * 1000;
+  process.stderr.write(`watching ${slug} (poll ${interval / 1000}s)…\n`);
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const r = await api(`/api/docs/${encodeURIComponent(slug)}/status`);
+    const s = await r.json();
+    process.stderr.write(
+      `  ${new Date().toISOString()} — open=${s.openComments} editor=${s.lastEditor}\n`,
+    );
+    if (s.openComments === 0) {
+      process.stdout.write(JSON.stringify(s, null, 2) + "\n");
+      return;
+    }
+    await new Promise((r) => setTimeout(r, interval));
+  }
+}
+
+async function cmdOpen(args) {
+  const slug = args.positional[1];
+  if (!slug) throw new Error("Usage: mdr open <slug>");
+  await api(`/api/docs/${encodeURIComponent(slug)}/status`);
+  process.stdout.write(`${BASE}/?slug=${encodeURIComponent(slug)}\n`);
+}
+
+async function cmdBackfill(args) {
+  const slug = args.positional[1];
+  if (!slug) throw new Error("Usage: mdr backfill <slug>");
+
+  const doc = await (
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      headers: { Accept: "application/json" },
+    })
+  ).json();
+
+  const body = doc.body;
+  const lineStarts = [0];
+  for (let i = 0; i < body.length; i++) {
+    if (body.charCodeAt(i) === 10) lineStarts.push(i + 1);
+  }
+  const lineColToOffset = (line, col) => {
+    const idx = Math.max(0, Math.min(lineStarts.length - 1, line - 1));
+    const start = lineStarts[idx];
+    const nextStart =
+      idx + 1 < lineStarts.length ? lineStarts[idx + 1] : body.length + 1;
+    const maxCol = nextStart - start;
+    return start + Math.max(1, Math.min(maxCol, col)) - 1;
+  };
+
+  let backfilled = 0;
+  const updated = doc.comments.map((c) => {
+    const a = c.anchor;
+    if (a.contextBefore != null && a.contextAfter != null) return c;
+    const s = lineColToOffset(a.startLine, a.startCol);
+    const e = lineColToOffset(a.endLine, a.endCol);
+    backfilled++;
+    return {
+      ...c,
+      anchor: {
+        ...a,
+        contextBefore: body.slice(Math.max(0, s - 30), s),
+        contextAfter: body.slice(e, Math.min(body.length, e + 30)),
+      },
+    };
+  });
+
+  process.stderr.write(
+    `backfilled context on ${backfilled} of ${doc.comments.length} comment${
+      doc.comments.length === 1 ? "" : "s"
+    }\n`,
+  );
+
+  if (backfilled > 0) {
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comments: updated }),
+    });
+  }
+
+  // Round-trip the doc so the new context-aware relocate runs on every
+  // comment — this is what actually recovers orphans.
+  const markdown = await (
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      headers: { Accept: "text/markdown" },
+    })
+  ).text();
+
+  const summary = await (
+    await api(`/api/docs/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "text/markdown" },
+      body: markdown,
+    })
+  ).json();
+
+  process.stdout.write(JSON.stringify(summary, null, 2) + "\n");
+  process.stderr.write(
+    `done — ${summary.openComments} open, ${summary.resolvedComments} resolved, ${summary.orphanedComments} orphaned\n`,
+  );
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const cmd = args.positional[0];
+  if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h") {
+    process.stdout.write(HELP);
+    return;
+  }
+  try {
+    switch (cmd) {
+      case "push":
+        return await cmdPush(args);
+      case "pull":
+        return await cmdPull(args);
+      case "status":
+        return await cmdStatus(args);
+      case "ls":
+        return await cmdStatus({ ...args, positional: [args.positional[0]] });
+      case "watch":
+        return await cmdWatch(args);
+      case "open":
+        return await cmdOpen(args);
+      case "backfill":
+        return await cmdBackfill(args);
+      default:
+        process.stderr.write(`unknown command: ${cmd}\n\n${HELP}`);
+        process.exit(1);
+    }
+  } catch (e) {
+    if (e.cause?.code === "ECONNREFUSED") {
+      process.stderr.write(
+        `error: cannot reach ${BASE} — is the app running? (pnpm dev)\n`,
+      );
+      process.exit(2);
+    }
+    process.stderr.write(`error: ${e.message}\n`);
+    process.exit(1);
+  }
+}
+
+main();
