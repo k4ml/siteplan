@@ -192,6 +192,13 @@ export default function CommentThread({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              // Empty threads (highlighted but never typed in) are cheap to
+              // dismiss — skip the confirm prompt so closing feels like a
+              // cancel, not a destructive action.
+              if (comment.messages.length === 0) {
+                onDelete();
+                return;
+              }
               if (confirm("Delete this comment thread?")) onDelete();
             }}
             className="text-stone-400 hover:text-red-600"
