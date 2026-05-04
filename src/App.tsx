@@ -23,6 +23,18 @@ const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 480;
 const SIDEBAR_DEFAULT = 256;
 
+function slugFromPath(): string | null {
+  const path = window.location.pathname;
+  if (path === "/" || path === "") return null;
+  // Strip leading slash; ignore anything past a second segment.
+  const seg = path.slice(1).split("/")[0];
+  return seg ? decodeURIComponent(seg) : null;
+}
+
+function pathForSlug(slug: string | null): string {
+  return slug ? `/${encodeURIComponent(slug)}` : "/";
+}
+
 type ModalState =
   | { kind: "none" }
   | { kind: "paste"; mode: "create" | "replace" }
@@ -30,8 +42,8 @@ type ModalState =
 
 export default function App() {
   const [docs, setDocs] = useState<DocSummary[]>([]);
-  const [activeSlug, setActiveSlug] = useState<string | null>(() =>
-    localStorage.getItem(ACTIVE_KEY),
+  const [activeSlug, setActiveSlug] = useState<string | null>(
+    () => slugFromPath() ?? localStorage.getItem(ACTIVE_KEY),
   );
   const [activeDoc, setActiveDoc] = useState<FullDoc | null>(null);
   const [modal, setModal] = useState<ModalState>({ kind: "none" });
@@ -94,19 +106,42 @@ export default function App() {
     }
   }, []);
 
-  // Initial load
+  // Initial load. URL > localStorage > most-recent doc > empty state.
   useEffect(() => {
     (async () => {
       const list = await refreshDocs();
+      const fromURL = slugFromPath();
       const stored = localStorage.getItem(ACTIVE_KEY);
-      const slug = stored && list.some((d) => d.slug === stored)
-        ? stored
-        : list[0]?.slug ?? null;
+      const exists = (s: string | null) =>
+        s != null && list.some((d) => d.slug === s);
+      const slug =
+        (exists(fromURL) ? fromURL : null) ??
+        (exists(stored) ? stored : null) ??
+        list[0]?.slug ??
+        null;
       setActiveSlug(slug);
       if (slug) await loadActive(slug);
       else if (list.length === 0) setModal({ kind: "paste", mode: "create" });
     })();
   }, [refreshDocs, loadActive]);
+
+  // Keep the browser URL in sync with the active slug so the path is
+  // shareable and works as a bookmark, and listen for back/forward.
+  useEffect(() => {
+    const expected = pathForSlug(activeSlug);
+    if (window.location.pathname !== expected) {
+      window.history.pushState(null, "", expected);
+    }
+  }, [activeSlug]);
+
+  useEffect(() => {
+    const onPop = () => {
+      const slug = slugFromPath();
+      setActiveSlug(slug);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // Persist active slug
   useEffect(() => {

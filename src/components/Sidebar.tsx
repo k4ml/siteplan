@@ -99,13 +99,30 @@ export default function Sidebar({
             <li key={d.slug} className="px-2">
               <div
                 className={
-                  "group flex items-start gap-2 rounded-md px-2 py-2 md:py-1.5 cursor-pointer " +
+                  "group flex items-start gap-1 rounded-md " +
                   (isActive ? "bg-stone-200/70" : "hover:bg-stone-100")
                 }
-                onClick={() => onSelect(d.slug)}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="truncate font-medium text-stone-900">
+                <a
+                  href={`/${encodeURIComponent(d.slug)}`}
+                  onClick={(e) => {
+                    // Let the browser open in a new tab/window for cmd/ctrl/
+                    // shift/middle clicks. Otherwise stay SPA-style.
+                    if (
+                      e.metaKey ||
+                      e.ctrlKey ||
+                      e.shiftKey ||
+                      e.altKey ||
+                      e.button !== 0
+                    ) {
+                      return;
+                    }
+                    e.preventDefault();
+                    onSelect(d.slug);
+                  }}
+                  className="flex-1 min-w-0 px-2 py-2 md:py-1.5 text-stone-900 no-underline"
+                >
+                  <div className="truncate font-medium">
                     {d.title || d.slug || "Untitled"}
                   </div>
                   <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
@@ -131,14 +148,15 @@ export default function Sidebar({
                       </span>
                     )}
                   </div>
-                </div>
+                </a>
                 <button
                   type="button"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     onDelete(d.slug);
                   }}
-                  className="opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 text-stone-400 hover:text-red-600 px-2 py-1"
+                  className="opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0 text-stone-400 hover:text-red-600 px-2 py-1"
                   title="Delete"
                   aria-label={`Delete ${d.title}`}
                 >
