@@ -7,6 +7,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePositions from "../lib/rehype-positions";
 import { buildLineStarts, lineColToOffset } from "../lib/positions";
+import { mdComponents } from "../lib/md-components";
 import type { Comment } from "../types";
 
 interface Props {
@@ -170,6 +171,7 @@ export default function MarkdownRenderer({
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkFrontmatter]}
         rehypePlugins={rehypePlugins as never}
+        components={mdComponents}
       >
         {source}
       </ReactMarkdown>

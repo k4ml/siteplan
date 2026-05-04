@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import { mdComponents } from "../lib/md-components";
 import type {
   Author,
   Comment,
@@ -483,6 +484,7 @@ function MessageBody({ text }: { text: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
+        components={mdComponents}
       >
         {text}
       </ReactMarkdown>
