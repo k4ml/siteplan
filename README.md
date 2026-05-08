@@ -31,6 +31,7 @@ Or run `uv run manage.py vite_build` to build it manually, such as for productio
 In separate terminal, run:-
 
 ```
+npm install
 uv run python scripts/setup_dev.py
 overmind s
 ```
