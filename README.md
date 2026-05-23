@@ -33,7 +33,7 @@ In separate terminal, run:-
 ```
 npm install
 uv run python scripts/setup_dev.py
-overmind s
+overmind s -l web,vite,mail
 ```
 
 Login to the dashboard at `/dashboard/` and using email `admin@siteplan.co` and password `picard data`.
