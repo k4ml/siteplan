@@ -1,18 +1,30 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-from django.contrib.auth.views import LoginView, LogoutView
 
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail import urls as wagtail_urls
 from wagtail.documents import urls as wagtaildocs_urls
 
-from siteplan.views import index, dashboard, LoginView, LogoutView
+from siteplan.views import (
+    LoginView,
+    LogoutView,
+    PasswordChangeView,
+    ProfileView,
+    dashboard,
+    index,
+)
 
 
 urlpatterns = [
     path("", index, name="index"),
     path("app/", dashboard, name="dashboard"),
+    path("profile/", ProfileView.as_view(), name="profile"),
+    path(
+        "password/change/",
+        PasswordChangeView.as_view(),
+        name="password_change",
+    ),
     path(
         "login/",
         LoginView.as_view(),

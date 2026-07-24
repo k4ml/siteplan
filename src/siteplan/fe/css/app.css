@@ -1,3 +1,4 @@
 @import "tailwindcss";
 @source "../../templates/**/*.html";
 @source "../js/**/*.js";
+@source "../../../../ext-src/django-umin/src/django_umin/templates/**/*.html";
