@@ -55,7 +55,7 @@ class Command(BaseCommand):
             temp_config_file = None
             try:
                 with tempfile.NamedTemporaryFile(
-                    mode="w", delete=False, suffix=".js", dir=project_root
+                    mode="w", delete=False, prefix="vite-build-config-", suffix=".js", dir=project_root
                 ) as f:
                     f.write(vite_config_content)
                     temp_config_file = f.name

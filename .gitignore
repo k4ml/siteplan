@@ -145,3 +145,7 @@ media/
 static/build/
 
 externals-src/
+
+# Vite temp config files
+vite-build-config-*.js
+vite-dev-config-*.js
