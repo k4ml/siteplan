@@ -195,7 +195,11 @@ LOGOUT_REDIRECT_URL = "/"
 
 WAGTAIL_SITE_NAME = "Siteplan App"
 
-INSTALLED_APPS = ["siteplan_user", "siteplan"] + INSTALLED_APPS
+INSTALLED_APPS = ["siteplan_user", "siteplan", "siteplan.billing"] + INSTALLED_APPS
+
+MIGRATION_MODULES = {
+    "billing": "siteplan.billing.migrations",
+}
 WSGI_APPLICATION = "siteplan.wsgi.application"
 ROOT_URLCONF = "siteplan.urls"
 LOGIN_TEMPLATE = "siteplan/login.html"

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import include, path
 
 from wagtail.admin import urls as wagtailadmin_urls
@@ -31,6 +32,8 @@ urlpatterns = [
         name="login",
     ),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("app/billing/", include("siteplan.billing.urls")),
+    path("crud/", lambda r: redirect("billing:crud_index"), name="crud_index"),
     path("admin/", admin.site.urls),
     path("cms/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),

@@ -1,0 +1,94 @@
+{% extends "labzero_base.html" %}
+{% load i18n django_umin_tags %}
+
+{% block 'page_title' %}{{ model_name_plural|title }}{% endblock %}
+
+{% block 'page_content' %}
+<div x-data="{ showFilters: false }">
+    <div class="mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">{{ model_name_plural|title }}</h2>
+                <p class="mt-1 text-sm text-gray-500">Manage your {{ model_name_plural }}</p>
+            </div>
+            <div class="mt-4 sm:mt-0">
+                {% if has_add_permission %}
+                <a href="{% crud_url url_namespace 'create' %}"
+                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Add {{ model_name|title }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if crud_view.search_fields or crud_view.list_filter %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="p-4">
+            <form hx-get="{% crud_url url_namespace 'list' %}"
+                  hx-target="#results-table"
+                  {% if crud_view.search_fields %}hx-trigger="submit, input delay:500ms from:find input[name='q']"{% endif %}
+                  hx-indicator="#search-indicator"
+                  class="space-y-4">
+                {% if crud_view.search_fields %}
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input type="text" name="q" value="{{ search_query }}"
+                           placeholder="Search {{ model_name_plural }}..."
+                           class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <div id="search-indicator" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <svg class="htmx-indicator animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if search_query %}
+    <div class="mb-4 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+            <span class="font-medium">{{ object_list|length }}</span>
+            result{{ object_list|length|pluralize }} found for
+            <span class="font-medium text-indigo-600">"{{ search_query }}"</span>
+        </div>
+        <a href="{% crud_url url_namespace 'list' %}"
+           class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors">
+            Clear search
+        </a>
+    </div>
+    {% endif %}
+
+    <div id="results-table" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden htmx-target">
+        {% include "django_umin/list_content.html" %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'results-table') {
+            const htmxMessages = evt.detail.target.querySelector('#htmx-messages');
+            if (htmxMessages) {
+                const mainMessages = document.getElementById('messages');
+                if (mainMessages) {
+                    mainMessages.innerHTML = htmxMessages.innerHTML;
+                    htmxMessages.remove();
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
