@@ -19,9 +19,9 @@ from siteplan.views import (
 urlpatterns = [
     path("", index, name="index"),
     path("app/", dashboard, name="dashboard"),
-    path("profile/", ProfileView.as_view(), name="profile"),
+    path("app/profile/", ProfileView.as_view(), name="profile"),
     path(
-        "password/change/",
+        "app/password/change/",
         PasswordChangeView.as_view(),
         name="password_change",
     ),

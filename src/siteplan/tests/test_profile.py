@@ -11,7 +11,7 @@ def test_profile_update_renders_django_umin_form():
     client = Client()
     client.force_login(user)
 
-    response = client.get("/profile/")
+    response = client.get("/app/profile/")
     assert response.status_code == 200
     body = response.content.decode()
     # django_umin form_page renders the title; form_card renders the fields.
@@ -19,7 +19,7 @@ def test_profile_update_renders_django_umin_form():
     assert 'name="name"' in body
     assert 'name="email"' in body
     assert 'type="email"' in body
-    assert "/password/change/" in body
+    assert "/app/password/change/" in body
 
 
 @pytest.mark.django_db
@@ -30,7 +30,7 @@ def test_password_change_renders_django_umin_form():
     client = Client()
     client.force_login(user)
 
-    response = client.get("/password/change/")
+    response = client.get("/app/password/change/")
     assert response.status_code == 200
     body = response.content.decode()
     assert "Change Password" in body
@@ -49,10 +49,10 @@ def test_profile_update_persists_and_redirects():
     client.force_login(user)
 
     response = client.post(
-        "/profile/", {"name": "New Name", "email": "updated@example.com"}
+        "/app/profile/", {"name": "New Name", "email": "updated@example.com"}
     )
     assert response.status_code == 302
-    assert response.url == "/profile/"
+    assert response.url == "/app/profile/"
     user.refresh_from_db()
     assert user.name == "New Name"
     assert user.email == "updated@example.com"
@@ -67,7 +67,7 @@ def test_password_change_persists_and_keeps_session():
     client.force_login(user)
 
     response = client.post(
-        "/password/change/",
+        "/app/password/change/",
         {
             "old_password": "OldPass123!",
             "new_password1": "Br@vo2026xyZ#",
@@ -75,8 +75,8 @@ def test_password_change_persists_and_keeps_session():
         },
     )
     assert response.status_code == 302
-    assert response.url == "/profile/"
+    assert response.url == "/app/profile/"
     user.refresh_from_db()
     assert user.check_password("Br@vo2026xyZ#")
     # update_session_auth_hash should keep the user signed in.
-    assert client.get("/profile/").status_code == 200
+    assert client.get("/app/profile/").status_code == 200
