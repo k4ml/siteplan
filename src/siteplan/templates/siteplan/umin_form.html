@@ -1,0 +1,22 @@
+{% extends "labzero_base.html" %}
+{% load i18n %}
+
+{% block 'page_title' %}{{ page_title }}{% endblock %}
+
+{% block 'page_content' %}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<div class="max-w-3xl mx-auto">
+    {% if password_change_url %}
+    <div class="flex justify-end mb-4">
+        <a href="{{ password_change_url }}" class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            {% trans "Change password" %}
+            <svg class="h-4 w-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+    </div>
+    {% endif %}
+    {% include "django_umin/includes/messages.html" %}
+    {% include "django_umin/includes/form_page.html" %}
+</div>
+{% endblock %}
