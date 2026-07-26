@@ -6,6 +6,7 @@ from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.contrib.auth.views import PasswordChangeView as DjangoPasswordChangeView
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import UpdateView
 
 from siteplan.forms import ProfileForm
@@ -38,9 +39,9 @@ class UminFormMixin:
     """
 
     form_title = ""
-    submit_label = "Save"
+    submit_label = _("Save")
     cancel_url = None
-    page_title = "Profile"
+    page_title = _("Profile")
     htmx_enabled = False
 
     def get_context_data(self, **kwargs):
@@ -63,10 +64,10 @@ class ProfileView(UminFormMixin, LoginRequiredMixin, UpdateView):
     form_class = ProfileForm
     template_name = "siteplan/umin_form.html"
     success_url = reverse_lazy("profile")
-    form_title = "Update Profile"
-    submit_label = "Save Changes"
+    form_title = _("Update Profile")
+    submit_label = _("Save Changes")
     cancel_url = reverse_lazy("dashboard")
-    page_title = "Profile"
+    page_title = _("Profile")
 
     def get_object(self, queryset=None):
         return self.request.user
@@ -77,7 +78,7 @@ class ProfileView(UminFormMixin, LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, "Profile updated successfully.")
+        messages.success(self.request, _("Profile updated successfully."))
         return super().form_valid(form)
 
 
@@ -86,11 +87,11 @@ class PasswordChangeView(UminFormMixin, DjangoPasswordChangeView):
 
     template_name = "siteplan/umin_form.html"
     success_url = reverse_lazy("profile")
-    form_title = "Change Password"
-    submit_label = "Change Password"
+    form_title = _("Change Password")
+    submit_label = _("Change Password")
     cancel_url = reverse_lazy("profile")
-    page_title = "Change Password"
+    page_title = _("Change Password")
 
     def form_valid(self, form):
-        messages.success(self.request, "Password changed successfully.")
+        messages.success(self.request, _("Password changed successfully."))
         return super().form_valid(form)
