@@ -1,4 +1,5 @@
-When committing, add details commit messages. Do not attribute.
+- When committing, add details commit messages. Do not attribute.
+- All text shown in UI should be wrapped for translation.
 
 ## Markdown Reviewer
 
