@@ -1,13 +1,43 @@
 [project]
 name = "django-umin"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Lightweight Django CRUD library with Django Admin-style API, HTMX, and Tailwind CSS"
 readme = "README.md"
-authors = [
-    { name = "Kamal Mustafa", email = "kamal@koditi.my" }
-]
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Kamal Mustafa", email = "kamal@koditi.my" },
+]
+keywords = ["django", "crud", "htmx", "tailwind", "admin"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = ["django>=4.2"]
+
+[project.urls]
+Homepage = "https://github.com/k4ml/siteplan"
+Repository = "https://github.com/k4ml/siteplan"
+Documentation = "https://github.com/k4ml/siteplan/tree/main/ext-src/django-umin/docs"
+
+[tool.uv]
+package = true
 
 [build-system]
 requires = ["uv_build>=0.9.11,<0.10.0"]

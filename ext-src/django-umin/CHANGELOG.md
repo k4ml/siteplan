@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-06
+
 ### Added
 - **Proxy and HMR support**: Added support for proxied development environments (e.g., GitHub Codespaces). New settings allow configuring custom dev server URLs and WebSocket connections for Hot Module Replacement (HMR):
   - `DJANGO_UMIN_VITE_DEV_SERVER_URL`: Full base URL for the dev server (e.g., `https://codespace-5173.app.github.dev`)

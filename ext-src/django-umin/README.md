@@ -26,7 +26,7 @@ pip install django-umin
 
 ### 2. Add to your Django project
 
-Copy the `django_umin` directory to your Django project or install as a package.
+Add the app to your Django project settings:
 
 ### 3. Update settings.py
 
@@ -268,7 +268,7 @@ your_app/templates/django_umin/
 
 ```python
 from django.contrib.auth.mixins import LoginRequiredMixin
-from crud.views import CRUDView
+from django_umin.views import CRUDView
 
 class BookCRUD(LoginRequiredMixin, CRUDView):
     model = Book
