@@ -1,0 +1,8 @@
+{% extends "labzero_base.html" %}
+{% load i18n django_umin_tags %}
+
+{% block 'page_title' %}{{ action }} {{ model_name|title }}{% endblock %}
+
+{% block 'page_content' %}
+{% include "django_umin/includes/form_page.html" %}
+{% endblock %}
