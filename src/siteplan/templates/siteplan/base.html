@@ -11,6 +11,7 @@
 <body class="font-sans">
   {% block 'content' %}{% endblock %}
   {% vite_asset "js/main.js" "siteplan" %}
+  {% block 'extra_scripts' %}{% endblock %}
   {% analytics_code "body" %}
 </body>
 </html>

@@ -55,7 +55,10 @@ def plan():
     return Plan.objects.create(
         name="Basic",
         description="Basic plan",
-        price=10.00,
+        prices=[
+            {"currency": "usd", "amount": "10.00", "stripe_price_id": None},
+            {"currency": "myr", "amount": "45.00", "stripe_price_id": None},
+        ],
         features=["Feature A", "Feature B"],
         is_active=True,
     )
@@ -68,4 +71,5 @@ def subscription(user, plan):
     return Subscription.objects.create(
         user=user, plan=plan, status="active", gateway="dummy",
         gateway_subscription_id="dummy_sub_1_1",
+        amount="10.00", currency="usd",
     )

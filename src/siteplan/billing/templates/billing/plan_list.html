@@ -3,6 +3,11 @@
 
 {% block 'page_title' %}{{ model_name_plural|title }}{% endblock %}
 
+{% block 'extra_scripts' %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+{% endblock %}
+
 {% block 'page_content' %}
 <div x-data="{ showFilters: false }">
     <div class="mb-6">
@@ -73,6 +78,8 @@
     <div id="results-table" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden htmx-target">
         {% include "django_umin/list_content.html" %}
     </div>
+
+    <div id="delete-modal" class="relative"></div>
 </div>
 
 <script>
@@ -86,6 +93,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     mainMessages.innerHTML = htmxMessages.innerHTML;
                     htmxMessages.remove();
                 }
+            }
+        }
+    });
+
+    // Re-initialize Alpine on the delete modal so its x-show works after swap.
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'delete-modal' && window.Alpine) {
+            Alpine.initTree(evt.detail.target);
+        }
+        if (evt.detail.target.id === 'results-table') {
+            const modal = document.getElementById('delete-modal');
+            if (modal) {
+                modal.innerHTML = '';
             }
         }
     });

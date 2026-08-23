@@ -1,5 +1,11 @@
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models.deletion import ProtectedError
+from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.urls import path
+from django.utils.translation import gettext_lazy as _
 
 from django_umin.views import CRUDListView, CRUDCreateView, CRUDUpdateView, CRUDDeleteView
 
@@ -13,7 +19,6 @@ from .views import (
     subscribe_plan,
     subscription_list,
 )
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 app_name = "billing"
 
@@ -33,7 +38,37 @@ class StaffCRUDUpdateView(StaffRequiredMixin, LoginRequiredMixin, CRUDUpdateView
 
 
 class StaffCRUDDeleteView(StaffRequiredMixin, LoginRequiredMixin, CRUDDeleteView):
-    pass
+    def form_valid(self, form):
+        obj = self.get_object()
+        try:
+            return super().form_valid(form)
+        except ProtectedError:
+            messages.error(
+                self.request,
+                _("Cannot delete {name}: it has active or past subscriptions.").format(
+                    name=obj
+                ),
+            )
+            queryset = self.crud_view.get_queryset(self.request)
+            context = {
+                "object_list": queryset,
+                "crud_view": self.crud_view,
+                "model_name": self.crud_view.model._meta.verbose_name,
+                "model_name_plural": self.crud_view.model._meta.verbose_name_plural,
+                "search_query": self.request.GET.get("q", ""),
+                "list_display": self.crud_view.list_display,
+                "list_display_links": self.crud_view.list_display_links,
+                "has_add_permission": True,
+                "url_namespace": self.crud_view.get_url_namespace(),
+                "messages": list(messages.get_messages(self.request)),
+                "is_paginated": False,
+            }
+            html = render_to_string(
+                "django_umin/list_content.html", context, self.request
+            )
+            response = HttpResponse(html)
+            response["HX-Trigger"] = "showMessage"
+            return response
 
 
 def crud_index(request):

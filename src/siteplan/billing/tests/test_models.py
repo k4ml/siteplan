@@ -8,14 +8,35 @@ def test_plan_creation():
     from siteplan.billing.models import Plan
 
     plan = Plan.objects.create(
-        name="Pro", description="Pro plan", price=25.00,
+        name="Pro", description="Pro plan",
+        prices=[{"currency": "usd", "amount": "25.00"}],
         features=["10 projects", "Priority support"],
     )
     assert plan.name == "Pro"
-    assert plan.price == 25.00
     assert plan.is_active is True
     assert len(plan.features) == 2
     assert str(plan) == "Pro"
+
+
+@pytest.mark.django_db
+def test_plan_get_price():
+    from siteplan.billing.models import Plan
+
+    plan = Plan.objects.create(
+        name="Multi", prices=[
+            {"currency": "usd", "amount": "10.00"},
+            {"currency": "myr", "amount": "45.00"},
+        ],
+    )
+    assert plan.get_price("usd")["amount"] == "10.00"
+    assert plan.get_price("myr")["amount"] == "45.00"
+    assert plan.get_price("eur")["amount"] == "10.00"  # fallback to first
+    assert plan.get_price()["amount"] == "10.00"  # default currency
+
+
+@pytest.mark.django_db
+def test_plan_supported_currencies(plan):
+    assert plan.supported_currencies() == ["usd", "myr"]
 
 
 @pytest.mark.django_db

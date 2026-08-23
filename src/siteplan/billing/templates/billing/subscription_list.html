@@ -1,5 +1,5 @@
 {% extends "labzero_base.html" %}
-{% load i18n %}
+{% load i18n billing_tags %}
 
 {% block 'page_title' %}{% trans "My Subscriptions" %}{% endblock %}
 
@@ -20,7 +20,7 @@
       <div class="flex justify-between items-start">
         <div>
           <h3 class="text-xl font-bold">{{ sub.plan.name }}</h3>
-          <p class="text-gray-600">${{ sub.plan.price }}/{% trans "mo" %}</p>
+          <p class="text-gray-600">{{ sub.amount|floatformat:2 }} {{ sub.currency|upper }}/{% trans "mo" %}</p>
           <p class="text-sm text-gray-500 mt-1">
             {% trans "Started" %} {{ sub.start_date|date:"M d, Y" }}
           </p>

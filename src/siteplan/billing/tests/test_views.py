@@ -22,13 +22,52 @@ class TestPlanCRUD:
         response = client.post("/app/billing/plans/create/", {
             "name": "Premium",
             "description": "Premium tier",
-            "price": "49.00",
-            "features": '["Unlimited projects", "24/7 support"]',
+            "prices": "usd 49.00\nmyr 199.00",
+            "features": "Unlimited projects\n24/7 support",
             "is_active": True,
         })
         assert response.status_code == 302
         plan = Plan.objects.get(name="Premium")
-        assert plan.price == 49.00
+        assert plan.get_price("usd")["amount"] == "49.00"
+        assert plan.get_price("myr")["amount"] == "199.00"
+        assert plan.features == ["Unlimited projects", "24/7 support"]
+
+    def test_plan_update_form_renders_line_format(self, staff_user, plan):
+        client = Client()
+        client.force_login(staff_user)
+        response = client.get("/app/billing/plans/{}/".format(plan.pk))
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "usd 10.00" in body
+        assert "myr 45.00" in body
+        assert '{"currency"' not in body
+
+    def test_plan_delete_protected_by_subscriptions(self, staff_user, plan, user):
+        from siteplan.billing.models import Subscription
+
+        Subscription.objects.create(
+            user=user, plan=plan, status="active", gateway="dummy",
+            gateway_subscription_id="prot_sub",
+        )
+        client = Client()
+        client.force_login(staff_user)
+        response = client.post(
+            "/app/billing/plans/{}/delete/".format(plan.pk),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        assert "Cannot delete" in response.content.decode()
+        assert Plan.objects.filter(pk=plan.pk).exists()
+
+    def test_plan_delete_unprotected(self, staff_user, plan):
+        client = Client()
+        client.force_login(staff_user)
+        response = client.post(
+            "/app/billing/plans/{}/delete/".format(plan.pk),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        assert not Plan.objects.filter(pk=plan.pk).exists()
 
 
 @pytest.mark.django_db
@@ -81,6 +120,19 @@ class TestSubscribeFlow:
         sub = Subscription.objects.get(user=user, plan=plan)
         assert sub.status == "active"
         assert sub.gateway == "dummy"
+        assert sub.currency == "usd"
+        assert sub.amount is not None
+
+    def test_subscribe_with_currency(self, user, plan):
+        client = Client()
+        client.force_login(user)
+        response = client.post(
+            "/app/billing/subscribe/{}/?currency=myr".format(plan.pk)
+        )
+        assert response.status_code == 302
+        sub = Subscription.objects.get(user=user, plan=plan)
+        assert sub.currency == "myr"
+        assert str(sub.amount) == "45.00"
 
     def test_subscribe_requires_active_plan(self, user, plan):
         plan.is_active = False

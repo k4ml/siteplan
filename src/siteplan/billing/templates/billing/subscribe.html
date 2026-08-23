@@ -1,20 +1,34 @@
 {% extends "labzero_base.html" %}
-{% load i18n %}
+{% load i18n billing_tags %}
 
 {% block 'page_title' %}{% trans "Subscribe to a Plan" %}{% endblock %}
 
 {% block 'page_content' %}
 <div class="max-w-4xl mx-auto">
-  <h2 class="text-2xl font-semibold mb-6">{% trans "Choose a Plan" %}</h2>
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-semibold">{% trans "Choose a Plan" %}</h2>
+    {% if currencies %}
+    <form method="get" class="flex items-center gap-2">
+      <label for="currency" class="text-sm text-gray-600">{% trans "Currency:" %}</label>
+      <select name="currency" id="currency" onchange="this.form.submit()"
+              class="border border-gray-300 rounded-md px-3 py-1 text-sm">
+        {% for cur in currencies %}
+        <option value="{{ cur }}" {% if cur == selected_currency %}selected{% endif %}>{{ cur|upper }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+  </div>
 
   {% if plans %}
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     {% for plan in plans %}
+    {% with price_entry=plan|get_price:selected_currency %}
     <div class="bg-white rounded-lg shadow p-6 flex flex-col">
       <h3 class="text-xl font-bold mb-2">{{ plan.name }}</h3>
       <p class="text-gray-600 mb-4">{{ plan.description }}</p>
       <div class="text-3xl font-bold mb-4">
-        ${{ plan.price }}<span class="text-sm text-gray-500">/{% trans "mo" %}</span>
+        {{ price_entry|price_display }}<span class="text-sm text-gray-500">/{% trans "mo" %}</span>
       </div>
       {% if plan.features %}
       <ul class="mb-6 space-y-2 flex-1">
@@ -28,12 +42,13 @@
         {% endfor %}
       </ul>
       {% endif %}
-      <a href="{% url 'billing:subscribe' plan.pk %}"
+      <a href="{% url 'billing:subscribe' plan.pk %}?currency={{ selected_currency }}"
          class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md
                 {% if has_active_subscription %}opacity-50 pointer-events-none cursor-not-allowed{% endif %}">
         {% if has_active_subscription %}{% trans "Already Subscribed" %}{% else %}{% trans "Subscribe" %}{% endif %}
       </a>
     </div>
+    {% endwith %}
     {% endfor %}
   </div>
   {% else %}

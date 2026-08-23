@@ -13,7 +13,7 @@ from django_umin.views import CRUDView
 
 from siteplan.views import UminFormMixin
 
-from .forms import GatewayConfigForm
+from .forms import GatewayConfigForm, PlanForm
 from .gateway import get_gateway
 from .gateway.stripe import StripeGateway
 from .models import GatewayConfig, Plan, Subscription
@@ -26,10 +26,11 @@ class StaffRequiredMixin(UserPassesTestMixin):
 
 class PlanCRUD(CRUDView):
     model = Plan
-    fields = ["name", "description", "price", "features", "is_active", "stripe_price_id"]
-    list_display = ["name", "price", "is_active", "created_at"]
+    form_class = PlanForm
+    fields = ["name", "description", "prices", "features", "is_active"]
+    list_display = ["name", "prices_display", "is_active", "created_at"]
     search_fields = ["name", "description"]
-    ordering = ["price"]
+    ordering = ["name"]
     list_template = "billing/plan_list.html"
     form_template = "billing/plan_form.html"
     delete_template = "billing/plan_delete.html"
@@ -70,8 +71,23 @@ def subscribe_plan(request):
     has_active = Subscription.objects.filter(
         user=request.user, status=Subscription.Status.ACTIVE
     ).exists()
+
+    # Collect all unique currencies across plans
+    all_currencies = sorted({
+        p["currency"]
+        for plan in plans
+        for p in plan.prices
+        if p.get("currency")
+    })
+    selected_currency = request.GET.get("currency", "").lower()
+    if selected_currency not in all_currencies:
+        selected_currency = all_currencies[0] if all_currencies else "usd"
+
     return render(request, "billing/subscribe.html", {
-        "plans": plans, "has_active_subscription": has_active,
+        "plans": plans,
+        "has_active_subscription": has_active,
+        "currencies": all_currencies,
+        "selected_currency": selected_currency,
     })
 
 
@@ -82,6 +98,12 @@ def subscribe(request, plan_id):
     if Subscription.objects.filter(user=request.user, status=Subscription.Status.ACTIVE).exists():
         messages.error(request, _("You already have an active subscription."))
         return redirect("billing:subscription_list")
+
+    currency = request.GET.get("currency", "").lower() or None
+    price_entry = plan.get_price(currency)
+    if not price_entry:
+        messages.error(request, _("No pricing available for this plan."))
+        return redirect("billing:subscribe_plan")
 
     gateway = get_gateway()
 
@@ -103,6 +125,8 @@ def subscribe(request, plan_id):
         user=request.user, plan=plan, status=Subscription.Status.ACTIVE,
         gateway="dummy",
         gateway_subscription_id=result["gateway_subscription_id"],
+        amount=price_entry["amount"],
+        currency=price_entry["currency"].lower(),
     )
     messages.success(request, _("Subscription activated!"))
     return redirect("billing:subscription_list")

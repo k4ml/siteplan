@@ -6,20 +6,44 @@ from django.utils.translation import gettext_lazy as _
 class Plan(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    prices = models.JSONField(default=list, blank=True)
     features = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(default=True)
-    stripe_price_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["price"]
+        ordering = ["name"]
         verbose_name = _("Plan")
         verbose_name_plural = _("Plans")
 
     def __str__(self):
         return self.name
+
+    def get_price(self, currency=None):
+        if not self.prices:
+            return None
+        if currency is None:
+            currency = getattr(settings, "BILLING_DEFAULT_CURRENCY", "usd")
+        currency = currency.lower()
+        for entry in self.prices:
+            if entry.get("currency", "").lower() == currency:
+                return entry
+        return self.prices[0]
+
+    def supported_currencies(self):
+        return [p.get("currency", "") for p in self.prices if p.get("currency")]
+
+    @property
+    def prices_display(self):
+        """Human-readable prices, e.g. '$10.00 USD, RM45.00 MYR'."""
+        from .currency import format_price
+
+        return ", ".join(
+            format_price(p["amount"], p["currency"])
+            for p in self.prices
+            if p.get("currency") and p.get("amount")
+        ) or "-"
 
 
 class GatewayConfig(models.Model):
@@ -66,6 +90,8 @@ class Subscription(models.Model):
     )
     gateway = models.CharField(max_length=20)
     gateway_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, blank=True)
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
